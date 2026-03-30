@@ -8,7 +8,10 @@
     <style>
         :root {
             --apple-font: "SF Pro Display", "SF Pro Text", -apple-system, sans-serif;
+            /* iOS 26 spring: fast attack, slow settle */
             --apple-bezier: cubic-bezier(0.16, 1, 0.3, 1);
+            --spring-in:  cubic-bezier(0.34, 1.56, 0.64, 1);
+            --spring-out: cubic-bezier(0.25, 1, 0.5, 1);
 
             --bg-color: #f2f2f7;
             --title-color: rgba(60, 60, 67, 0.5);
@@ -33,20 +36,24 @@
         }
 
         body.dark {
-            --bg-color: #0a0a0c;
+            /* 不再是纯黑，改为深幽蓝黑，微微透出液态质感 */
+            --bg-color: #0d0d12;
             --title-color: rgba(235, 235, 245, 0.5);
-            --text-main: #f5f5f7;
-            --text-placeholder: rgba(235, 235, 245, 0.65);
-            --glass-bg: rgba(30, 30, 40, 0.25);
-            --glass-border: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.02));
-            /* 夜间转为哑光黑卡纸 */
-            --paper-bg: #1c1c1e;
+            --text-main: #f0f0f5;
+            --text-placeholder: rgba(235, 235, 245, 0.55);
+            --glass-bg: rgba(28, 28, 42, 0.28);
+            --glass-border: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.02));
+            --paper-bg: #1c1c22;
             --scroll-thumb: rgba(255, 255, 255, 0.15);
-            --menu-bg: #2c2c2e;
+            --menu-bg: #252530;
         }
 
         body.dark .bg-glow {
-            opacity: 0.15;
+            opacity: 0.18;
+            background:
+                radial-gradient(circle at 15% 25%, rgba(80, 100, 200, 0.25) 0%, transparent 50%),
+                radial-gradient(circle at 85% 15%, rgba(160, 80, 180, 0.18) 0%, transparent 50%),
+                radial-gradient(circle at 50% 85%, rgba(60, 80, 180, 0.18) 0%, transparent 50%);
         }
 
         /* --- 2. 完美全圆角胶囊滚动条 --- */
@@ -135,14 +142,56 @@
             stroke-linejoin: round;
         }
 
-        .mode-toggle {
+        /* 登录按钮：在原夜间模式位置 */
+        .login-toggle {
             top: 35px;
+            right: 35px;
+        }
+
+        /* 夜间模式下移至登录按钮正下方 */
+        .mode-toggle {
+            top: 91px;
             right: 35px;
         }
 
         .history-toggle {
             bottom: 35px;
             left: 35px;
+        }
+
+        /* 登录按钮共享同一套扁平胶囊样式 */
+        .login-toggle {
+            position: fixed;
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.40);
+            border-bottom-color: rgba(255,255,255,0.10);
+            cursor: pointer;
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.4s var(--apple-bezier);
+            box-shadow: inset 0 1px 2px rgba(255,255,255,0.6), 0 4px 16px rgba(0,0,0,0.07);
+        }
+
+        .login-toggle svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--text-main);
+        }
+
+        body.dark .login-toggle {
+            border-color: rgba(255,255,255,0.15);
+            border-bottom-color: rgba(255,255,255,0.04);
+            box-shadow: inset 0 1px 2px rgba(255,255,255,0.12), 0 4px 16px rgba(0,0,0,0.30);
+        }
+
+        .login-toggle:hover, .mode-toggle:hover {
+            transform: scale(1.06);
         }
 
         /* --- 岛屿容器 --- */
@@ -153,21 +202,95 @@
             pointer-events: none;
         }
 
+        /* ---- iOS 26 Liquid Glass — Island ---- */
         .island {
             position: absolute;
             top: 50%;
             left: 50%;
             pointer-events: auto;
             transform: translate(var(--tx), var(--ty)) scale(var(--s, 1));
-            background: var(--glass-bg);
-            backdrop-filter: var(--glass-blur);
-            -webkit-backdrop-filter: var(--glass-blur);
-            border: 1px solid var(--glass-border);
+
+            /* Multi-layer glass: specular film + body tint */
+            background:
+                linear-gradient(
+                    155deg,
+                    rgba(255,255,255,0.58) 0%,
+                    rgba(255,255,255,0.10) 28%,
+                    rgba(255,255,255,0.00) 58%,
+                    rgba(210,220,255,0.07) 100%
+                ),
+                rgba(255,255,255,0.20);
+
+            /* Deep blur + saturate for vivid refraction effect */
+            backdrop-filter: blur(44px) saturate(220%) brightness(1.05);
+            -webkit-backdrop-filter: blur(44px) saturate(220%) brightness(1.05);
+
             border-radius: 32px;
             overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03), inset 0 1px 2px rgba(255, 255, 255, 0.6);
-            transition: all 0.8s var(--apple-bezier);
+
+            /* Bright top/left edge = light-facing; dim bottom/right = shadow-facing (thickness illusion) */
+            border-top: 1px solid rgba(255,255,255,0.80);
+            border-left: 1px solid rgba(255,255,255,0.55);
+            border-right: 1px solid rgba(255,255,255,0.20);
+            border-bottom: 1px solid rgba(255,255,255,0.15);
+
+            box-shadow:
+                /* ambient drop shadow */
+                0  4px  8px  rgba(0,0,0,0.04),
+                0 14px 36px  rgba(0,0,0,0.08),
+                0 28px 64px  rgba(0,0,0,0.04),
+                /* water-tension outer ring */
+                0  0   0 1px rgba(255,255,255,0.35),
+                /* inner top specular */
+                inset 0  2px  4px rgba(255,255,255,0.95),
+                /* inner bottom dark rim (depth) */
+                inset 0 -2px  4px rgba(0,0,0,0.07),
+                /* lateral refraction */
+                inset  2px 0  3px rgba(255,255,255,0.45),
+                inset -2px 0  3px rgba(0,0,0,0.03);
+
+            transition: transform 0.75s var(--spring-out), width 0.75s var(--spring-out), height 0.75s var(--spring-out), border-radius 0.75s var(--spring-out), padding 0.5s var(--spring-out), box-shadow 0.4s ease, opacity 0.4s ease;
             cursor: text;
+        }
+
+        /* Curved top-gloss film */
+        .island::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 44%;
+            border-radius: 32px 32px 80% 80% / 32px 32px 28px 28px;
+            background: linear-gradient(
+                180deg,
+                rgba(255,255,255,0.42) 0%,
+                rgba(255,255,255,0.00) 100%
+            );
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        body.dark .island {
+            background:
+                linear-gradient(
+                    155deg,
+                    rgba(255,255,255,0.22) 0%,
+                    rgba(255,255,255,0.03) 38%,
+                    rgba(130,150,255,0.05) 100%
+                ),
+                rgba(36, 36, 52, 0.30);
+            backdrop-filter: blur(44px) saturate(180%) brightness(0.92);
+            -webkit-backdrop-filter: blur(44px) saturate(180%) brightness(0.92);
+            border-top-color:   rgba(255,255,255,0.28);
+            border-left-color:  rgba(255,255,255,0.18);
+            border-right-color: rgba(255,255,255,0.06);
+            border-bottom-color:rgba(255,255,255,0.05);
+            box-shadow:
+                0  6px 16px  rgba(0,0,0,0.30),
+                0 20px 50px  rgba(0,0,0,0.28),
+                0 36px 80px  rgba(0,0,0,0.18),
+                0  0   0 1px rgba(255,255,255,0.10),
+                inset 0  2px  4px rgba(255,255,255,0.22),
+                inset 0 -2px  4px rgba(0,0,0,0.45);
         }
 
         .island-1 {
@@ -216,12 +339,22 @@
 
         .island:hover {
             --s: 1.03;
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.06);
+            box-shadow:
+                0  6px 14px  rgba(0,0,0,0.06),
+                0 20px 50px  rgba(0,0,0,0.10),
+                0 38px 80px  rgba(0,0,0,0.05),
+                0  0   0 1px rgba(255,255,255,0.50),
+                0  0  24px 4px rgba(220,230,255,0.18),
+                inset 0  2px  5px rgba(255,255,255,1.0),
+                inset 0 -2px  4px rgba(0,0,0,0.09),
+                inset  2px 0  3px rgba(255,255,255,0.55),
+                inset -2px 0  3px rgba(0,0,0,0.04);
         }
 
         .island:focus-within {
             --s: 1.05;
-            border-color: rgba(0, 122, 255, 0.4);
+            border-top-color: rgba(100,180,255,0.80);
+            border-left-color: rgba(100,180,255,0.55);
             z-index: 20;
         }
 
@@ -366,6 +499,38 @@
             transition: all 0.8s var(--apple-bezier);
         }
 
+        body.is-generating .siri-sphere-center {
+            top: calc(50% + 30px);
+            width: 88vw;
+            max-width: 1100px;
+            height: 75vh;
+        }
+
+        /* 展开后变为羊皮纸/黑卡纸 */
+        body.is-generating .siri-sphere {
+            border-radius: 40px;
+            cursor: default;
+            background-color: var(--paper-bg);
+            background-image: var(--paper-grain);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.15);
+            border-top:    1px solid rgba(0,0,0,0.05);
+            border-left:   1px solid rgba(0,0,0,0.05);
+            border-right:  1px solid rgba(0,0,0,0.05);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+        }
+
+        body.is-generating .siri-sphere::before,
+        body.is-generating .siri-sphere::after {
+            opacity: 0;
+        }
+
+        /* ========================================
+           真正的 Siri 活物涌动球体
+           ======================================== */
+
+        /* 薄玻璃外壳 — 低不透明，让内部彩液完整透出 */
         .siri-sphere {
             width: 100%;
             height: 100%;
@@ -375,32 +540,163 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            transition: all 0.8s var(--apple-bezier);
-            border: none;
-            background: transparent;
+            transition: border-radius 0.8s var(--apple-bezier),
+                        box-shadow 0.5s ease,
+                        backdrop-filter 0.8s ease;
             cursor: pointer;
+
+            /* 极薄的玻璃膜感，让彩色 blob 透出来是主角 */
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(6px) saturate(160%);
+            -webkit-backdrop-filter: blur(6px) saturate(160%);
+
+            border-top:    1.5px solid rgba(255,255,255,0.80);
+            border-left:   1px   solid rgba(255,255,255,0.45);
+            border-right:  1px   solid rgba(255,255,255,0.15);
+            border-bottom: 1px   solid rgba(255,255,255,0.10);
+
+            box-shadow:
+                0  6px 20px  rgba(0,0,0,0.08),
+                0 18px 50px  rgba(0,0,0,0.08),
+                0  0   0 1.5px rgba(255,255,255,0.40),
+                inset 0  2px  6px rgba(255,255,255,0.95),
+                inset 0 -2px  5px rgba(0,0,0,0.06);
         }
 
-        body.is-generating .siri-sphere-center {
-            top: calc(50% + 30px);
-            width: 88vw;
-            max-width: 1100px;
-            height: 75vh;
+        /* 顶部高光弧 — 凸透镜质感 */
+        .siri-sphere::before {
+            content: '';
+            position: absolute;
+            top: 5%; left: 15%;
+            width: 70%; height: 28%;
+            border-radius: 50%;
+            background: radial-gradient(
+                ellipse at 50% 5%,
+                rgba(255,255,255,0.85) 0%,
+                rgba(255,255,255,0.00) 100%
+            );
+            pointer-events: none;
+            z-index: 20;
+            filter: blur(2px);
+            transition: opacity 0.6s ease;
         }
 
-        /* 羊皮纸/黑卡纸 材质生效 */
-        body.is-generating .siri-sphere {
-            border-radius: 40px;
-            cursor: default;
-            background-color: var(--paper-bg);
-            background-image: var(--paper-grain);
-            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.15);
-            border: 1px solid rgba(0, 0, 0, 0.05);
+        /* 底部折射焦散 */
+        .siri-sphere::after {
+            content: '';
+            position: absolute;
+            bottom: 8%; left: 25%;
+            width: 50%; height: 12%;
+            border-radius: 50%;
+            background: radial-gradient(
+                ellipse,
+                rgba(190,220,255,0.28) 0%,
+                rgba(255,255,255,0.00) 100%
+            );
+            pointer-events: none;
+            z-index: 20;
+            filter: blur(5px);
+            transition: opacity 0.6s ease;
+        }
+
+        /* Hover：轻微放大 + 高光增强 */
+        .siri-sphere:hover {
+            transform: scale(1.06);
+            box-shadow:
+                0  8px 28px  rgba(0,0,0,0.12),
+                0 22px 60px  rgba(0,0,0,0.10),
+                0  0   0 1.5px rgba(255,255,255,0.60),
+                0  0  50px 10px rgba(180,210,255,0.20),
+                inset 0  2px  7px rgba(255,255,255,1.0),
+                inset 0 -2px  5px rgba(0,0,0,0.08);
+        }
+
+        /* Hover 时内部 blob 加速 */
+        .siri-sphere:hover .blob-1 { animation-duration: 4s, 5s; }
+        .siri-sphere:hover .blob-2 { animation-duration: 5s, 7s; }
+        .siri-sphere:hover .blob-3 { animation-duration: 4.5s, 6s; }
+        .siri-sphere:hover .blob-4 { animation-duration: 4s, 5s; }
+
+        body.dark .siri-sphere {
+            background: rgba(20,20,40,0.15);
+            backdrop-filter: blur(6px) saturate(140%);
+            -webkit-backdrop-filter: blur(6px) saturate(140%);
+            border-top-color:    rgba(255,255,255,0.28);
+            border-left-color:   rgba(255,255,255,0.15);
+            border-right-color:  rgba(255,255,255,0.05);
+            border-bottom-color: rgba(255,255,255,0.04);
+            box-shadow:
+                0  8px 24px  rgba(0,0,0,0.40),
+                0 20px 55px  rgba(0,0,0,0.35),
+                0  0   0 1.5px rgba(255,255,255,0.12),
+                inset 0  2px  5px rgba(255,255,255,0.22),
+                inset 0 -2px  4px rgba(0,0,0,0.50);
+        }
+
+        /* ---- 内部活体 blob 系统 ---- */
+        /* sphere-shell 作为 blob 容器 */
+        .sphere-shell {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            overflow: hidden;
+            z-index: 1;
+            /* 整体形态按 organicWobble 慢慢变形 */
+            animation: organicWobble 12s infinite ease-in-out;
+        }
+
+        /* 每个 blob 是一个模糊的彩色有机体 */
+        .blob-1, .blob-2, .blob-3, .blob-4 {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(22px);
+            mix-blend-mode: screen;
+            will-change: transform, border-radius;
+        }
+
+        /* 蓝色主团 */
+        .blob-1 {
+            width: 80%; height: 80%;
+            top: -10%; left: -10%;
+            background: radial-gradient(circle at 40% 40%, #4285f4 0%, #5b9cff 40%, transparent 70%);
+            opacity: 0.85;
+            animation: blobFloat1 8s infinite ease-in-out alternate,
+                       blobMorph1 10s infinite ease-in-out;
+        }
+
+        /* 紫粉团 */
+        .blob-2 {
+            width: 70%; height: 70%;
+            bottom: -15%; right: -10%;
+            background: radial-gradient(circle at 60% 55%, #9b72cb 0%, #d96a9d 50%, transparent 75%);
+            opacity: 0.80;
+            animation: blobFloat2 9s infinite ease-in-out alternate,
+                       blobMorph2 11s infinite ease-in-out;
+        }
+
+        /* 琥珀橙微团 */
+        .blob-3 {
+            width: 55%; height: 55%;
+            top: 20%; right: 0%;
+            background: radial-gradient(circle at 50% 50%, #feab3a 0%, #ff7eb3 50%, transparent 80%);
+            opacity: 0.60;
+            animation: blobFloat3 7s infinite ease-in-out alternate,
+                       blobMorph3 9s infinite ease-in-out;
+        }
+
+        /* 青色小团 — 营造深度 */
+        .blob-4 {
+            width: 45%; height: 45%;
+            bottom: 5%; left: 5%;
+            background: radial-gradient(circle at 50% 50%, #34c5ff 0%, #6bb5ff 50%, transparent 80%);
+            opacity: 0.50;
+            animation: blobFloat4 10s infinite ease-in-out alternate,
+                       blobMorph1 13s infinite ease-in-out reverse;
         }
 
         .sphere-shell,
         .siri-core {
-            transition: opacity 0.3s;
+            transition: opacity 0.5s;
         }
 
         body.is-generating .sphere-shell,
@@ -408,39 +704,14 @@
             opacity: 0;
         }
 
-        .sphere-shell {
-            position: absolute;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.03);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            border-radius: 50%;
-            z-index: 1;
-            animation: organicWobble 10s infinite ease-in-out;
-        }
-
+        /* siri-core 保留为空 — blob 已接管 */
         .siri-core {
-            position: absolute;
-            inset: 15%;
-            border-radius: 50%;
-            filter: blur(15px);
-            opacity: 0.7;
-            z-index: 2;
-            background: radial-gradient(circle at 30% 30%, var(--siri-1), transparent), radial-gradient(circle at 70% 30%, var(--siri-2), transparent);
-            animation: coreChurn 10s infinite alternate ease-in-out;
+            display: none;
         }
 
+        /* sphere-text 隐藏（去掉"生成"字） */
         .sphere-text {
-            position: relative;
-            z-index: 3;
-            color: white;
-            font-size: 18px;
-            font-weight: 700;
-            transition: 0.4s;
-        }
-
-        body.is-generating .sphere-text {
-            opacity: 0;
+            display: none;
         }
 
         /* --- 剧本区 (分层退场) --- */
@@ -502,23 +773,62 @@
             display: none;
         }
 
-        /* --- 记忆抽屉 --- */
+        /* --- 记忆抽屉：液态玻璃升级 --- */
         .history-drawer {
             position: fixed;
             top: 20px;
             bottom: 20px;
-            left: -400px;
-            width: 350px;
-            background: var(--glass-bg);
-            backdrop-filter: blur(40px);
+            left: -420px;
+            width: 360px;
+            /* 多层玻璃背景：顶部高光膜 + 主体 */
+            background:
+                linear-gradient(
+                    160deg,
+                    rgba(255,255,255,0.50) 0%,
+                    rgba(255,255,255,0.08) 30%,
+                    rgba(255,255,255,0.00) 60%
+                ),
+                rgba(255,255,255,0.22);
+            backdrop-filter: blur(50px) saturate(200%) brightness(1.04);
+            -webkit-backdrop-filter: blur(50px) saturate(200%) brightness(1.04);
             border-radius: 28px;
-            border: 1px solid var(--glass-border);
+            border-top:    1px solid rgba(255,255,255,0.75);
+            border-left:   1px solid rgba(255,255,255,0.50);
+            border-right:  1px solid rgba(255,255,255,0.18);
+            border-bottom: 1px solid rgba(255,255,255,0.12);
+            box-shadow:
+                4px 0 40px rgba(0,0,0,0.06),
+                12px 0 80px rgba(0,0,0,0.08),
+                inset 0 1.5px 3px rgba(255,255,255,0.90),
+                inset 0 -1px 2px rgba(0,0,0,0.05);
             z-index: 2000;
-            transition: left 0.6s var(--apple-bezier);
+            transition: left 0.65s var(--spring-out);
             display: flex;
             flex-direction: column;
             padding: 40px 20px;
             box-sizing: border-box;
+        }
+
+        body.dark .history-drawer {
+            background:
+                linear-gradient(
+                    160deg,
+                    rgba(255,255,255,0.18) 0%,
+                    rgba(255,255,255,0.02) 38%,
+                    rgba(120,140,255,0.04) 100%
+                ),
+                rgba(32, 32, 48, 0.42);
+            backdrop-filter: blur(50px) saturate(180%) brightness(0.90);
+            -webkit-backdrop-filter: blur(50px) saturate(180%) brightness(0.90);
+            border-top-color:    rgba(255,255,255,0.20);
+            border-left-color:   rgba(255,255,255,0.12);
+            border-right-color:  rgba(255,255,255,0.05);
+            border-bottom-color: rgba(255,255,255,0.04);
+            box-shadow:
+                4px 0 40px rgba(0,0,0,0.30),
+                16px 0 80px rgba(0,0,0,0.25),
+                inset 0 1.5px 3px rgba(255,255,255,0.18),
+                inset 0 -1px 2px rgba(0,0,0,0.40);
         }
 
         .history-drawer.open {
@@ -660,13 +970,53 @@
         }
 
         @keyframes coreChurn {
-            0% {
-                transform: rotate(0deg);
-            }
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(180deg) scale(1.1); }
+        }
 
-            100% {
-                transform: rotate(180deg) scale(1.1);
-            }
+        /* ---- Blob 浮动与变形动画 ---- */
+        @keyframes blobFloat1 {
+            0%   { transform: translate(0%, 0%) scale(1); }
+            25%  { transform: translate(15%, 10%) scale(1.08); }
+            50%  { transform: translate(8%, 20%) scale(0.95); }
+            75%  { transform: translate(-5%, 8%) scale(1.05); }
+            100% { transform: translate(10%, -10%) scale(1.02); }
+        }
+        @keyframes blobFloat2 {
+            0%   { transform: translate(0%, 0%) scale(1); }
+            30%  { transform: translate(-12%, -15%) scale(1.10); }
+            60%  { transform: translate(-20%, -5%) scale(0.92); }
+            100% { transform: translate(-8%, -18%) scale(1.04); }
+        }
+        @keyframes blobFloat3 {
+            0%   { transform: translate(0%, 0%) scale(1); }
+            40%  { transform: translate(-18%, 12%) scale(1.12); }
+            80%  { transform: translate(-8%, 20%) scale(0.90); }
+            100% { transform: translate(-15%, 5%) scale(1.06); }
+        }
+        @keyframes blobFloat4 {
+            0%   { transform: translate(0%, 0%) scale(1); }
+            35%  { transform: translate(20%, -10%) scale(1.15); }
+            70%  { transform: translate(10%, -20%) scale(0.88); }
+            100% { transform: translate(15%, -8%) scale(1.08); }
+        }
+        @keyframes blobMorph1 {
+            0%, 100% { border-radius: 50%; }
+            20%  { border-radius: 60% 40% 55% 45% / 45% 55% 40% 60%; }
+            40%  { border-radius: 45% 55% 40% 60% / 60% 40% 55% 45%; }
+            60%  { border-radius: 55% 45% 60% 40% / 40% 60% 45% 55%; }
+            80%  { border-radius: 40% 60% 45% 55% / 55% 45% 60% 40%; }
+        }
+        @keyframes blobMorph2 {
+            0%, 100% { border-radius: 50%; }
+            25%  { border-radius: 65% 35% 50% 50% / 50% 50% 35% 65%; }
+            50%  { border-radius: 40% 60% 65% 35% / 35% 65% 60% 40%; }
+            75%  { border-radius: 50% 50% 35% 65% / 65% 35% 50% 50%; }
+        }
+        @keyframes blobMorph3 {
+            0%, 100% { border-radius: 50%; }
+            33%  { border-radius: 55% 45% 45% 55% / 60% 40% 60% 40%; }
+            66%  { border-radius: 45% 55% 60% 40% / 40% 60% 45% 55%; }
         }
     </style>
 </head>
@@ -676,6 +1026,10 @@
     <div class="bg-glow"></div>
     <div class="history-overlay" id="history-overlay" onclick="toggleDrawer()"></div>
 
+    <!-- 登录按钮（原夜间模式位置） -->
+    <button class="login-toggle" id="login-btn" onclick="openAuthModal()">
+        <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+    </button>
     <button class="mode-toggle" onclick="toggleMode()"><svg id="mode-icon" viewBox="0 0 24 24">
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
         </svg></button>
@@ -744,8 +1098,13 @@
 
     <div class="siri-sphere-center">
         <div class="siri-sphere" onclick="startGenerate()">
-            <div class="sphere-shell"></div>
-            <div class="siri-core"></div><span class="sphere-text">生成</span>
+            <div class="sphere-shell">
+                <div class="blob-1"></div>
+                <div class="blob-2"></div>
+                <div class="blob-3"></div>
+                <div class="blob-4"></div>
+            </div>
+            <div class="siri-core"></div><span class="sphere-text"></span>
             <div class="script-content-wrapper" id="script-wrapper">
                 <div class="script-scroll-area" id="scroll-area">
                     <div class="script-text" id="script-content"></div>
@@ -758,7 +1117,258 @@
         </div>
     </div>
 
+    <!-- ===== 登录/注册 模态框 ===== -->
+    <div class="auth-overlay" id="auth-overlay" onclick="closeAuthModal()"></div>
+    <div class="auth-modal" id="auth-modal">
+        <div class="auth-tabs">
+            <button class="auth-tab active" id="tab-login" onclick="switchTab('login')">登录</button>
+            <button class="auth-tab" id="tab-register" onclick="switchTab('register')">注册</button>
+        </div>
+        <div class="auth-body">
+            <input class="auth-input" type="text" id="auth-username" placeholder="用户名" autocomplete="username">
+            <input class="auth-input" type="password" id="auth-password" placeholder="密码" autocomplete="current-password">
+            <div class="auth-error" id="auth-error"></div>
+            <button class="auth-submit" id="auth-submit-btn" onclick="submitAuth()">登录</button>
+        </div>
+        <button class="auth-close" onclick="closeAuthModal()">✕</button>
+    </div>
+
+    <style>
+        /* ===== 登录模态框样式 ===== */
+        .auth-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.35);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 5000;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.35s var(--apple-bezier);
+        }
+        .auth-overlay.show { opacity: 1; pointer-events: auto; }
+
+        .auth-modal {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -44%) scale(0.94);
+            width: 360px;
+            background:
+                linear-gradient(160deg, rgba(255,255,255,0.60) 0%, rgba(255,255,255,0.10) 40%, rgba(255,255,255,0) 100%),
+                rgba(255,255,255,0.28);
+            backdrop-filter: blur(44px) saturate(220%);
+            -webkit-backdrop-filter: blur(44px) saturate(220%);
+            border-radius: 28px;
+            border-top: 1px solid rgba(255,255,255,0.80);
+            border-left: 1px solid rgba(255,255,255,0.50);
+            border-right: 1px solid rgba(255,255,255,0.18);
+            border-bottom: 1px solid rgba(255,255,255,0.12);
+            box-shadow:
+                0 20px 60px rgba(0,0,0,0.15),
+                inset 0 2px 4px rgba(255,255,255,0.90);
+            z-index: 5001;
+            padding: 32px 28px 28px;
+            box-sizing: border-box;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.35s var(--apple-bezier), transform 0.45s var(--spring-out);
+        }
+        .auth-modal.show {
+            opacity: 1; pointer-events: auto;
+            transform: translate(-50%, -50%) scale(1);
+        }
+        body.dark .auth-modal {
+            background:
+                linear-gradient(160deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.03) 40%, transparent 100%),
+                rgba(30,30,46,0.50);
+            border-top-color: rgba(255,255,255,0.22);
+            border-left-color: rgba(255,255,255,0.12);
+            border-right-color: rgba(255,255,255,0.05);
+            border-bottom-color: rgba(255,255,255,0.04);
+            box-shadow:
+                0 20px 60px rgba(0,0,0,0.45),
+                inset 0 2px 4px rgba(255,255,255,0.15);
+        }
+        .auth-tabs {
+            display: flex; gap: 8px; margin-bottom: 24px;
+        }
+        .auth-tab {
+            flex: 1; height: 38px;
+            border: none; border-radius: 12px;
+            background: transparent;
+            font-family: var(--apple-font);
+            font-size: 15px; font-weight: 600;
+            color: var(--text-placeholder);
+            cursor: pointer;
+            transition: all 0.3s var(--apple-bezier);
+        }
+        .auth-tab.active {
+            background: rgba(255,255,255,0.60);
+            color: var(--text-main);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08), inset 0 1px 2px rgba(255,255,255,0.8);
+        }
+        body.dark .auth-tab.active {
+            background: rgba(255,255,255,0.12);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.30), inset 0 1px 2px rgba(255,255,255,0.12);
+        }
+        .auth-input {
+            width: 100%; height: 48px;
+            background: rgba(255,255,255,0.55);
+            border: 1px solid rgba(255,255,255,0.70);
+            border-bottom-color: rgba(0,0,0,0.06);
+            border-radius: 14px;
+            font-family: var(--apple-font);
+            font-size: 16px; color: var(--text-main);
+            padding: 0 16px; box-sizing: border-box;
+            outline: none; margin-bottom: 12px;
+            transition: all 0.3s var(--apple-bezier);
+        }
+        .auth-input:focus {
+            border-color: rgba(66,133,244,0.60);
+            background: rgba(255,255,255,0.70);
+            box-shadow: 0 0 0 3px rgba(66,133,244,0.12);
+        }
+        body.dark .auth-input {
+            background: rgba(255,255,255,0.06);
+            border-color: rgba(255,255,255,0.14);
+            color: var(--text-main);
+        }
+        body.dark .auth-input::placeholder { color: var(--text-placeholder); }
+        body.dark .auth-input:focus {
+            background: rgba(255,255,255,0.10);
+            border-color: rgba(100,160,255,0.55);
+        }
+        .auth-error {
+            font-size: 13px; color: #ff3b30;
+            min-height: 18px; margin-bottom: 8px;
+            font-family: var(--apple-font);
+        }
+        .auth-submit {
+            width: 100%; height: 48px;
+            border: none; border-radius: 14px;
+            background: linear-gradient(135deg, #4285f4, #9b72cb);
+            color: #fff;
+            font-family: var(--apple-font);
+            font-size: 16px; font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(66,133,244,0.30);
+            transition: all 0.3s var(--spring-in);
+        }
+        .auth-submit:hover { transform: scale(1.03); box-shadow: 0 6px 24px rgba(66,133,244,0.40); }
+        .auth-submit:active { transform: scale(0.97); }
+        .auth-close {
+            position: absolute; top: 16px; right: 18px;
+            background: none; border: none;
+            font-size: 18px; color: var(--text-placeholder);
+            cursor: pointer; line-height: 1;
+        }
+        .auth-close:hover { color: var(--text-main); }
+
+        /* 已登录时登录按钮出现绿点 */
+        .login-toggle.logged-in::after {
+            content: '';
+            position: absolute; bottom: 8px; right: 8px;
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: #30d158;
+            border: 1.5px solid var(--bg-color);
+        }
+        .login-toggle { position: relative; }
+    </style>
+
     <script>
+        /* =========================================
+           AUTH — 注册 / 登录 / 登出
+           ========================================= */
+        let currentUser = null;
+        let authMode = 'login'; // 'login' | 'register'
+
+        // 页面加载时检查登录状态
+        (async function checkSession() {
+            try {
+                const r = await fetch('/api/auth/me');
+                if (r.ok) {
+                    const d = await r.json();
+                    currentUser = d.username;
+                    onLoggedIn();
+                }
+            } catch(e) {}
+        })();
+
+        function openAuthModal() {
+            if (currentUser) { openUserMenu(); return; }
+            document.getElementById('auth-overlay').classList.add('show');
+            document.getElementById('auth-modal').classList.add('show');
+            setTimeout(() => document.getElementById('auth-username').focus(), 300);
+        }
+        function closeAuthModal() {
+            document.getElementById('auth-overlay').classList.remove('show');
+            document.getElementById('auth-modal').classList.remove('show');
+            document.getElementById('auth-error').innerText = '';
+        }
+        function switchTab(mode) {
+            authMode = mode;
+            document.getElementById('tab-login').classList.toggle('active', mode === 'login');
+            document.getElementById('tab-register').classList.toggle('active', mode === 'register');
+            document.getElementById('auth-submit-btn').innerText = mode === 'login' ? '登录' : '注册';
+            document.getElementById('auth-error').innerText = '';
+        }
+        async function submitAuth() {
+            const u = document.getElementById('auth-username').value.trim();
+            const p = document.getElementById('auth-password').value;
+            const errEl = document.getElementById('auth-error');
+            if (!u || !p) { errEl.innerText = '请填写用户名和密码'; return; }
+            const btn = document.getElementById('auth-submit-btn');
+            btn.innerText = '处理中…'; btn.disabled = true;
+            try {
+                const endpoint = authMode === 'login' ? '/api/auth/login' : '/api/auth/register';
+                const r = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: u, password: p })
+                });
+                const d = await r.json();
+                if (!r.ok) { errEl.innerText = d.detail || '操作失败'; }
+                else {
+                    currentUser = d.username;
+                    onLoggedIn();
+                    closeAuthModal();
+                }
+            } catch(e) { errEl.innerText = '网络错误，请重试'; }
+            btn.innerText = authMode === 'login' ? '登录' : '注册';
+            btn.disabled = false;
+        }
+        function onLoggedIn() {
+            document.getElementById('login-btn').classList.add('logged-in');
+            loadCloudHistory();
+        }
+        async function openUserMenu() {
+            // 简单 confirm 登出
+            if (confirm(`当前账号：${currentUser}\n点击确定登出`)) {
+                await fetch('/api/auth/logout', { method: 'POST' });
+                currentUser = null;
+                document.getElementById('login-btn').classList.remove('logged-in');
+                // 回退到本地存储
+                historyData = JSON.parse(localStorage.getItem('scriptHistory')) || [];
+                renderHistory();
+            }
+        }
+
+        /* 云端历史记录同步 */
+        async function loadCloudHistory() {
+            try {
+                const r = await fetch('/api/history');
+                if (r.ok) {
+                    const d = await r.json();
+                    historyData = d.map(i => ({
+                        id: i.id, timestamp: i.timestamp,
+                        pinned: i.pinned||false, tags: i.tags, content: i.content
+                    }));
+                    renderHistory();
+                }
+            } catch(e) {}
+        }
+
+        /* =========================================
+           CORE APP — unchanged logic below
+           ========================================= */
         let abortController = null, fullScript = "";
         let historyData = JSON.parse(localStorage.getItem('scriptHistory')) || [];
         historyData = historyData.map(i => ({ id: i.id || Math.random().toString(36).substr(2, 9), timestamp: i.timestamp || Date.now(), pinned: i.pinned || false, tags: i.tags, content: i.content }));
@@ -774,6 +1384,12 @@
 
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.item-menu-btn')) document.querySelectorAll('.item-action-menu').forEach(m => m.classList.remove('show'));
+        });
+
+        // 回车提交 auth
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Enter' && document.getElementById('auth-modal').classList.contains('show')) submitAuth();
+            if (e.key === 'Escape' && document.getElementById('auth-modal').classList.contains('show')) closeAuthModal();
         });
 
         async function startGenerate() {
@@ -816,19 +1432,47 @@
         }
 
         function cancelGen(e) { e.stopPropagation(); if (abortController) abortController.abort(); }
-        function finishGen() { document.getElementById('cancel-btn').style.display = 'none'; document.getElementById('return-btn').style.display = 'block'; if (fullScript.length > 20) { saveItem({ tags: `${document.getElementById('era').value || '时代'}·${document.getElementById('identity').value || '身份'}`, content: fullScript }); } }
+        async function finishGen() {
+            document.getElementById('cancel-btn').style.display = 'none';
+            document.getElementById('return-btn').style.display = 'block';
+            if (fullScript.length > 20) {
+                const item = { tags: `${document.getElementById('era').value || '时代'}·${document.getElementById('identity').value || '身份'}`, content: fullScript };
+                saveItem(item);
+                // 如果已登录，同步到云端
+                if (currentUser) {
+                    try {
+                        await fetch('/api/history', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(item)
+                        });
+                    } catch(e) {}
+                }
+            }
+        }
 
         function goBack(e) {
             e.stopPropagation();
             const wrapper = document.getElementById('script-wrapper');
-            wrapper.style.transition = 'opacity 0.2s ease'; wrapper.style.opacity = '0';
+            // 先淡出内容
+            wrapper.style.transition = 'opacity 0.25s ease';
+            wrapper.style.opacity = '0';
             setTimeout(() => {
+                // spring 弹回：移除 is-generating 后 CSS transition 接管
                 document.body.classList.remove('is-generating');
-                setTimeout(() => { document.getElementById('script-content').innerText = ""; wrapper.style.transition = ''; wrapper.style.opacity = ''; }, 800);
-            }, 200);
+                // 延迟清空内容，等待 spring 动画完成
+                setTimeout(() => {
+                    document.getElementById('script-content').innerText = "";
+                    wrapper.style.transition = '';
+                    wrapper.style.opacity = '';
+                }, 900);
+            }, 220);
         }
 
-        function saveData() { localStorage.setItem('scriptHistory', JSON.stringify(historyData)); renderHistory(); }
+        function saveData() {
+            if (!currentUser) localStorage.setItem('scriptHistory', JSON.stringify(historyData));
+            renderHistory();
+        }
         function saveItem(item) { historyData.push({ id: Math.random().toString(36).substr(2, 9), timestamp: Date.now(), pinned: false, ...item }); saveData(); }
 
         function toggleMenu(e, id) { e.stopPropagation(); document.querySelectorAll('.item-action-menu').forEach(m => { if (m.id !== `menu-${id}`) m.classList.remove('show'); }); document.getElementById(`menu-${id}`).classList.toggle('show'); }
