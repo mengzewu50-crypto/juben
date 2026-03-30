@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI剧本生成平台</title>
+    <style>
+        :root {
+            --apple-font: "SF Pro Display", "SF Pro Text", -apple-system, sans-serif;
+            --apple-bezier: cubic-bezier(0.16, 1, 0.3, 1);
+
+            --bg-color: #f2f2f7;
+            --title-color: rgba(60, 60, 67, 0.5);
+            --text-main: #1d1d1f;
+            --text-placeholder: rgba(60, 60, 67, 0.35);
+            --glass-bg: rgba(255, 255, 255, 0.15);
+            --glass-blur: blur(15px) saturate(180%);
+            --glass-border: linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.1));
+
+            /* 1. 仿真羊皮草纸质感 */
+            --paper-bg: #f4f1ea;
+            --paper-grain: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+
+            --siri-1: #4285f4;
+            --siri-2: #9b72cb;
+            --siri-3: #d96a9d;
+            --siri-4: #feab3a;
+
+            /* 滚动条与菜单实体色 */
+            --scroll-thumb: rgba(0, 0, 0, 0.15);
+            --menu-bg: #ffffff;
+        }
+
+        body.dark {
+            --bg-color: #0a0a0c;
+            --title-color: rgba(235, 235, 245, 0.5);
+            --text-main: #f5f5f7;
+            --text-placeholder: rgba(235, 235, 245, 0.65);
+            --glass-bg: rgba(30, 30, 40, 0.25);
+            --glass-border: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.02));
+            /* 夜间转为哑光黑卡纸 */
+            --paper-bg: #1c1c1e;
+            --scroll-thumb: rgba(255, 255, 255, 0.15);
+            --menu-bg: #2c2c2e;
+        }
+
+        body.dark .bg-glow {
+            opacity: 0.15;
+        }
+
+        /* --- 2. 完美全圆角胶囊滚动条 --- */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--scroll-thumb);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(120, 120, 120, 0.4);
+        }
+
+        body {
+            font-family: var(--apple-font);
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background: var(--bg-color);
+            color: var(--text-main);
+            transition: background 0.8s var(--apple-bezier);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .bg-glow {
+            position: fixed;
+            inset: -20%;
+            z-index: -1;
+            background:
+                radial-gradient(circle at 15% 25%, rgba(195, 228, 255, 0.4) 0%, transparent 50%),
+                radial-gradient(circle at 85% 15%, rgba(255, 213, 229, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 50% 85%, rgba(226, 226, 255, 0.3) 0%, transparent 50%);
+            filter: blur(100px);
+            animation: liquidFlow 30s infinite alternate ease-in-out;
+        }
+
+        @keyframes liquidFlow {
+            from {
+                transform: scale(1);
+            }
+
+            to {
+                transform: scale(1.1) rotate(3deg);
+            }
+        }
+
+        .mode-toggle,
+        .history-toggle {
+            position: fixed;
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            cursor: pointer;
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.4s var(--apple-bezier);
+        }
+
+        .mode-toggle svg,
+        .history-toggle svg {
+            width: 22px;
+            height: 22px;
+            fill: var(--text-main);
+        }
+
+        body.dark .mode-toggle svg {
+            fill: none;
+            stroke: var(--text-main);
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .mode-toggle {
+            top: 35px;
+            right: 35px;
+        }
+
+        .history-toggle {
+            bottom: 35px;
+            left: 35px;
+        }
+
+        /* --- 岛屿容器 --- */
+        .islands-container {
+            position: absolute;
+            inset: 0;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .island {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            pointer-events: auto;
+            transform: translate(var(--tx), var(--ty)) scale(var(--s, 1));
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: 32px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03), inset 0 1px 2px rgba(255, 255, 255, 0.6);
+            transition: all 0.8s var(--apple-bezier);
+            cursor: text;
+        }
+
+        .island-1 {
+            --tx: calc(-100% - 70px);
+            --ty: calc(-100% - 70px);
+            width: 38vw;
+            max-width: 440px;
+            height: 22vh;
+            max-height: 200px;
+            padding: 30px 40px;
+            box-sizing: border-box;
+        }
+
+        .island-2 {
+            --tx: 70px;
+            --ty: calc(-100% - 70px);
+            width: 38vw;
+            max-width: 440px;
+            height: 22vh;
+            max-height: 200px;
+            padding: 30px 40px;
+            box-sizing: border-box;
+        }
+
+        .island-3 {
+            --tx: calc(-100% - 70px);
+            --ty: 70px;
+            width: 38vw;
+            max-width: 440px;
+            height: 22vh;
+            max-height: 200px;
+            padding: 30px 40px;
+            box-sizing: border-box;
+        }
+
+        .island-4 {
+            --tx: 70px;
+            --ty: 70px;
+            width: 38vw;
+            max-width: 440px;
+            height: 22vh;
+            max-height: 200px;
+            padding: 30px 40px;
+            box-sizing: border-box;
+        }
+
+        .island:hover {
+            --s: 1.03;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.06);
+        }
+
+        .island:focus-within {
+            --s: 1.05;
+            border-color: rgba(0, 122, 255, 0.4);
+            z-index: 20;
+        }
+
+        body:has(.island:focus-within) .island:not(:focus-within) {
+            filter: blur(4px);
+            opacity: 0.7;
+        }
+
+        body.is-generating .island-1 {
+            --tx: calc(-200% - 25px);
+            --ty: calc(-50vh + 35px);
+            width: 160px;
+            height: 46px;
+            border-radius: 23px;
+            padding: 0 15px;
+        }
+
+        body.is-generating .island-2 {
+            --tx: calc(-100% - 8px);
+            --ty: calc(-50vh + 35px);
+            width: 160px;
+            height: 46px;
+            border-radius: 23px;
+            padding: 0 15px;
+        }
+
+        body.is-generating .island-3 {
+            --tx: 8px;
+            --ty: calc(-50vh + 35px);
+            width: 160px;
+            height: 46px;
+            border-radius: 23px;
+            padding: 0 15px;
+        }
+
+        body.is-generating .island-4 {
+            --tx: calc(100% + 25px);
+            --ty: calc(-50vh + 35px);
+            width: 160px;
+            height: 46px;
+            border-radius: 23px;
+            padding: 0 15px;
+        }
+
+        .normal-view {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            height: 100%;
+            transition: opacity 0.4s ease;
+        }
+
+        .pill-view {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+
+        .pill-view svg {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+            fill: var(--text-main);
+        }
+
+        .pill-text {
+            color: var(--text-main);
+            font-size: 14px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100px;
+        }
+
+        body.is-generating .normal-view {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        body.is-generating .pill-view {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .label-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            opacity: 0.8;
+            pointer-events: none;
+        }
+
+        .label-row label {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--title-color);
+            text-transform: uppercase;
+        }
+
+        .label-row svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--title-color);
+        }
+
+        input {
+            background: transparent;
+            border: none;
+            font-size: 26px;
+            font-weight: 500;
+            color: var(--text-main);
+            outline: none;
+            width: 100%;
+            font-family: var(--apple-font);
+        }
+
+        input::placeholder {
+            color: var(--text-placeholder);
+        }
+
+        /* --- 生成容器 --- */
+        .siri-sphere-center {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 50;
+            width: 140px;
+            height: 140px;
+            transition: all 0.8s var(--apple-bezier);
+        }
+
+        .siri-sphere {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.8s var(--apple-bezier);
+            border: none;
+            background: transparent;
+            cursor: pointer;
+        }
+
+        body.is-generating .siri-sphere-center {
+            top: calc(50% + 30px);
+            width: 88vw;
+            max-width: 1100px;
+            height: 75vh;
+        }
+
+        /* 羊皮纸/黑卡纸 材质生效 */
+        body.is-generating .siri-sphere {
+            border-radius: 40px;
+            cursor: default;
+            background-color: var(--paper-bg);
+            background-image: var(--paper-grain);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .sphere-shell,
+        .siri-core {
+            transition: opacity 0.3s;
+        }
+
+        body.is-generating .sphere-shell,
+        body.is-generating .siri-core {
+            opacity: 0;
+        }
+
+        .sphere-shell {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.03);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            z-index: 1;
+            animation: organicWobble 10s infinite ease-in-out;
+        }
+
+        .siri-core {
+            position: absolute;
+            inset: 15%;
+            border-radius: 50%;
+            filter: blur(15px);
+            opacity: 0.7;
+            z-index: 2;
+            background: radial-gradient(circle at 30% 30%, var(--siri-1), transparent), radial-gradient(circle at 70% 30%, var(--siri-2), transparent);
+            animation: coreChurn 10s infinite alternate ease-in-out;
+        }
+
+        .sphere-text {
+            position: relative;
+            z-index: 3;
+            color: white;
+            font-size: 18px;
+            font-weight: 700;
+            transition: 0.4s;
+        }
+
+        body.is-generating .sphere-text {
+            opacity: 0;
+        }
+
+        /* --- 剧本区 (分层退场) --- */
+        .script-content-wrapper {
+            position: absolute;
+            inset: 0;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.6s ease 0.4s;
+        }
+
+        body.is-generating .script-content-wrapper {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .script-scroll-area {
+            flex: 1;
+            padding: 40px 50px 0;
+            overflow-y: auto;
+        }
+
+        .script-text {
+            line-height: 2.2;
+            font-size: 21px;
+            white-space: pre-wrap;
+            color: var(--text-main);
+            padding-bottom: 20px;
+        }
+
+        .action-bar {
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .action-btn {
+            padding: 12px 28px;
+            border-radius: 18px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.4s;
+        }
+
+        .btn-cancel {
+            background: rgba(255, 59, 48, 0.1);
+            color: #ff3b30;
+            display: none;
+        }
+
+        .btn-return {
+            background: rgba(0, 0, 0, 0.05);
+            color: var(--text-main);
+            display: none;
+        }
+
+        /* --- 记忆抽屉 --- */
+        .history-drawer {
+            position: fixed;
+            top: 20px;
+            bottom: 20px;
+            left: -400px;
+            width: 350px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(40px);
+            border-radius: 28px;
+            border: 1px solid var(--glass-border);
+            z-index: 2000;
+            transition: left 0.6s var(--apple-bezier);
+            display: flex;
+            flex-direction: column;
+            padding: 40px 20px;
+            box-sizing: border-box;
+        }
+
+        .history-drawer.open {
+            left: 20px;
+        }
+
+        .history-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1999;
+            display: none;
+        }
+
+        .history-overlay.open {
+            display: block;
+        }
+
+        .history-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            position: relative;
+            padding: 15px 15px 35px 15px;
+            background: rgba(120, 120, 120, 0.1);
+            border-radius: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .history-item.is-pinned {
+            padding-left: 36px;
+            border-left: 3px solid var(--siri-2);
+        }
+
+        .pin-icon {
+            position: absolute;
+            top: 16px;
+            left: 12px;
+            width: 14px;
+            fill: var(--text-placeholder);
+            display: none;
+            transform: rotate(-45deg);
+        }
+
+        .history-item.is-pinned .pin-icon {
+            display: block;
+        }
+
+        .item-menu-btn {
+            position: absolute;
+            bottom: 8px;
+            right: 10px;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+
+        .item-menu-btn:hover {
+            background: rgba(120, 120, 120, 0.2);
+        }
+
+        /* 4. 实体防遮挡菜单 */
+        .item-action-menu {
+            position: absolute;
+            right: 10px;
+            z-index: 100;
+            min-width: 110px;
+            background: var(--menu-bg);
+            /* 实体色防止重叠 */
+            border-radius: 12px;
+            padding: 6px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            display: none;
+            flex-direction: column;
+        }
+
+        .item-action-menu.show {
+            display: flex;
+            animation: menuPop 0.2s ease;
+        }
+
+        /* 智能弹出方向：第一项向下，其余向上 */
+        .history-item:first-child .item-action-menu {
+            top: 25px;
+            bottom: auto;
+        }
+
+        .history-item:not(:first-child) .item-action-menu {
+            bottom: 35px;
+            top: auto;
+        }
+
+        .menu-action {
+            padding: 8px 12px;
+            font-size: 13px;
+            border-radius: 6px;
+            cursor: pointer;
+            color: var(--text-main);
+            transition: 0.2s;
+        }
+
+        .menu-action:hover {
+            background: rgba(120, 120, 120, 0.15);
+        }
+
+        @keyframes menuPop {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes organicWobble {
+
+            0%,
+            100% {
+                border-radius: 50%;
+            }
+
+            33% {
+                border-radius: 55% 45% 52% 48% / 48% 52% 45% 55%;
+            }
+
+            66% {
+                border-radius: 48% 52% 46% 54% / 54% 46% 52% 48%;
+            }
+        }
+
+        @keyframes coreChurn {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(180deg) scale(1.1);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="bg-glow"></div>
+    <div class="history-overlay" id="history-overlay" onclick="toggleDrawer()"></div>
+
+    <button class="mode-toggle" onclick="toggleMode()"><svg id="mode-icon" viewBox="0 0 24 24">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+        </svg></button>
+    <button class="history-toggle" onclick="toggleDrawer()"><svg viewBox="0 0 24 24">
+            <path
+                d="M12 2C8.13 2 5 5.13 5 9c0 1.25.32 2.42.88 3.44C6.39 13.5 7 14.67 7 16v1c0 1.1.9 2 2 2h6c1.1 0 2-.9 2-2v-1c0-1.33.61-2.5 1.12-3.56.56-1.02.88-2.19.88-3.44 0-3.87-3.13-7-7-7zm0 2c2.76 0 5 2.24 5 5 0 1.05-.29 2.05-.79 2.92C15.68 13.04 15 14.28 15 15.5V17H9v-1.5c0-1.22-.68-2.46-1.21-3.58C7.29 11.05 7 10.05 7 9c0-2.76 2.24-5 5-5zM9 20h6v1c0 1.1-.9 2-2 2h-2c-1.1 0-2-.9-2-2v-1z" />
+        </svg></button>
+
+    <div class="history-drawer" id="history-drawer">
+        <div class="drawer-header">
+            <h2>宿命记忆</h2>
+        </div>
+        <div class="history-list" id="history-list"></div>
+    </div>
+
+    <div class="islands-container">
+        <div class="island island-1" onclick="this.querySelector('input').focus()">
+            <div class="normal-view">
+                <div class="label-row"><svg viewBox="0 0 24 24">
+                        <path
+                            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
+                    </svg><label>时代背景</label></div><input type="text" id="era" placeholder="例如：古罗马">
+            </div>
+            <div class="pill-view"><svg viewBox="0 0 24 24">
+                    <path
+                        d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
+                </svg><span class="pill-text" id="pill-text-era"></span></div>
+        </div>
+        <div class="island island-2" onclick="this.querySelector('input').focus()">
+            <div class="normal-view">
+                <div class="label-row"><svg viewBox="0 0 24 24">
+                        <path
+                            d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+                    </svg><label>具体地点</label></div><input type="text" id="location" placeholder="例如：斗兽场">
+            </div>
+            <div class="pill-view"><svg viewBox="0 0 24 24">
+                    <path
+                        d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+                </svg><span class="pill-text" id="pill-text-location"></span></div>
+        </div>
+        <div class="island island-3" onclick="this.querySelector('input').focus()">
+            <div class="normal-view">
+                <div class="label-row"><svg viewBox="0 0 24 24">
+                        <path
+                            d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                    </svg><label>底层身份</label></div><input type="text" id="identity" placeholder="例如：哑巴奴隶">
+            </div>
+            <div class="pill-view"><svg viewBox="0 0 24 24">
+                    <path
+                        d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                </svg><span class="pill-text" id="pill-text-identity"></span></div>
+        </div>
+        <div class="island island-4" onclick="this.querySelector('input').focus()">
+            <div class="normal-view">
+                <div class="label-row"><svg viewBox="0 0 24 24">
+                        <path
+                            d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zm0-5C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" />
+                    </svg><label>逆袭元素</label></div><input type="text" id="reversal" placeholder="例如：绝世长相">
+            </div>
+            <div class="pill-view"><svg viewBox="0 0 24 24">
+                    <path
+                        d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zm0-5C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" />
+                </svg><span class="pill-text" id="pill-text-reversal"></span></div>
+        </div>
+    </div>
+
+    <div class="siri-sphere-center">
+        <div class="siri-sphere" onclick="startGenerate()">
+            <div class="sphere-shell"></div>
+            <div class="siri-core"></div><span class="sphere-text">生成</span>
+            <div class="script-content-wrapper" id="script-wrapper">
+                <div class="script-scroll-area" id="scroll-area">
+                    <div class="script-text" id="script-content"></div>
+                </div>
+                <div class="action-bar">
+                    <button class="action-btn btn-cancel" id="cancel-btn" onclick="cancelGen(event)">停止感悟</button>
+                    <button class="action-btn btn-return" id="return-btn" onclick="goBack(event)">← 记忆并回到原点</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let abortController = null, fullScript = "";
+        let historyData = JSON.parse(localStorage.getItem('scriptHistory')) || [];
+        historyData = historyData.map(i => ({ id: i.id || Math.random().toString(36).substr(2, 9), timestamp: i.timestamp || Date.now(), pinned: i.pinned || false, tags: i.tags, content: i.content }));
+        saveData();
+
+        function toggleMode() {
+            const b = document.body, i = document.getElementById('mode-icon');
+            b.classList.toggle('dark');
+            i.innerHTML = b.classList.contains('dark') ? '<circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>' : '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />';
+        }
+
+        function toggleDrawer() { document.getElementById('history-drawer').classList.toggle('open'); document.getElementById('history-overlay').classList.toggle('open'); }
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.item-menu-btn')) document.querySelectorAll('.item-action-menu').forEach(m => m.classList.remove('show'));
+        });
+
+        async function startGenerate() {
+            if (document.body.classList.contains('is-generating')) return;
+            ['era', 'location', 'identity', 'reversal'].forEach(id => {
+                const v = document.getElementById(id).value || document.getElementById(id).placeholder.replace('例如：', '');
+                document.getElementById(`pill-text-${id}`).innerText = v;
+            });
+
+            document.body.classList.add('is-generating');
+            const content = document.getElementById('script-content'), wrapper = document.getElementById('script-wrapper');
+            const cBtn = document.getElementById('cancel-btn'), rBtn = document.getElementById('return-btn'), scroll = document.getElementById('scroll-area');
+
+            wrapper.style.transition = 'opacity 0.6s ease 0.4s'; wrapper.style.opacity = '1';
+            cBtn.style.display = 'block'; rBtn.style.display = 'none';
+            content.innerText = "时空链接中..."; fullScript = ""; abortController = new AbortController();
+
+            try {
+                const res = await fetch('/api/generate_script', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ era: document.getElementById('era').value, location: document.getElementById('location').value, identity: document.getElementById('identity').value, reversal: document.getElementById('reversal').value }), signal: abortController.signal });
+                const reader = res.body.getReader(), decoder = new TextDecoder();
+                content.innerText = "";
+                let buffer = "";
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n'); buffer = lines.pop();
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const dataStr = line.slice(6);
+                            if (dataStr === '[DONE]') { finishGen(); break; }
+                            try {
+                                const parsed = JSON.parse(dataStr);
+                                if (parsed.content) { fullScript += parsed.content; content.innerText = fullScript; scroll.scrollTop = scroll.scrollHeight; }
+                            } catch (e) { }
+                        }
+                    }
+                }
+            } catch (e) { if (e.name === 'AbortError') content.innerText += "\n\n[ 已停止 ]"; finishGen(); }
+        }
+
+        function cancelGen(e) { e.stopPropagation(); if (abortController) abortController.abort(); }
+        function finishGen() { document.getElementById('cancel-btn').style.display = 'none'; document.getElementById('return-btn').style.display = 'block'; if (fullScript.length > 20) { saveItem({ tags: `${document.getElementById('era').value || '时代'}·${document.getElementById('identity').value || '身份'}`, content: fullScript }); } }
+
+        function goBack(e) {
+            e.stopPropagation();
+            const wrapper = document.getElementById('script-wrapper');
+            wrapper.style.transition = 'opacity 0.2s ease'; wrapper.style.opacity = '0';
+            setTimeout(() => {
+                document.body.classList.remove('is-generating');
+                setTimeout(() => { document.getElementById('script-content').innerText = ""; wrapper.style.transition = ''; wrapper.style.opacity = ''; }, 800);
+            }, 200);
+        }
+
+        function saveData() { localStorage.setItem('scriptHistory', JSON.stringify(historyData)); renderHistory(); }
+        function saveItem(item) { historyData.push({ id: Math.random().toString(36).substr(2, 9), timestamp: Date.now(), pinned: false, ...item }); saveData(); }
+
+        function toggleMenu(e, id) { e.stopPropagation(); document.querySelectorAll('.item-action-menu').forEach(m => { if (m.id !== `menu-${id}`) m.classList.remove('show'); }); document.getElementById(`menu-${id}`).classList.toggle('show'); }
+        function pinItem(e, id) { e.stopPropagation(); const i = historyData.find(x => x.id === id); if (i) i.pinned = !i.pinned; saveData(); }
+        function deleteItem(e, id) { e.stopPropagation(); historyData = historyData.filter(x => x.id !== id); saveData(); }
+        function copyText(e, id) { e.stopPropagation(); const i = historyData.find(x => x.id === id); navigator.clipboard.writeText(i.content); e.target.innerText = "已复制"; setTimeout(() => renderHistory(), 1000); }
+
+        function renderHistory() {
+            const list = document.getElementById('history-list'); list.innerHTML = '';
+            const sorted = [...historyData].sort((a, b) => (b.pinned - a.pinned) || (b.timestamp - a.timestamp));
+            sorted.forEach(item => {
+                const div = document.createElement('div'); div.className = `history-item ${item.pinned ? 'is-pinned' : ''}`;
+                div.innerHTML = `
+                <svg class="pin-icon" viewBox="0 0 24 24"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/></svg>
+                <div class="tag">${item.tags}</div><div>${item.content.substring(0, 40)}...</div>
+                <div class="item-menu-btn" onclick="toggleMenu(event, '${item.id}')"><svg viewBox="0 0 24 24"><path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg></div>
+                <div class="item-action-menu" id="menu-${item.id}">
+                    <div class="menu-action" onclick="pinItem(event, '${item.id}')">${item.pinned ? '取消置顶' : '置顶记忆'}</div>
+                    <div class="menu-action" onclick="copyText(event, '${item.id}')">复制内容</div>
+                    <div class="menu-action" onclick="deleteItem(event, '${item.id}')" style="color:#ff3b30">删除记忆</div>
+                </div>
+            `;
+                div.onclick = (e) => { if (e.target.closest('.item-menu-btn') || e.target.closest('.item-action-menu')) return; toggleDrawer(); document.body.classList.add('is-generating'); const wrapper = document.getElementById('script-wrapper'); wrapper.style.transition = 'opacity 0.6s ease 0.4s'; wrapper.style.opacity = '1'; document.getElementById('script-content').innerText = item.content; document.getElementById('cancel-btn').style.display = 'none'; document.getElementById('return-btn').style.display = 'block'; };
+                list.appendChild(div);
+            });
+        }
+    </script>
+</body>
+
+</html>
