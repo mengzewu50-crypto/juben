@@ -230,6 +230,10 @@
             opacity: 0.7;
         }
 
+        body.is-generating .island {
+            pointer-events: none;
+        }
+
         body.is-generating .island-1 {
             --tx: calc(-200% - 25px);
             --ty: calc(-50vh + 35px);
@@ -297,6 +301,7 @@
             color: var(--text-main);
             font-size: 14px;
             font-weight: 600;
+            font-family: var(--apple-font);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -310,7 +315,6 @@
 
         body.is-generating .pill-view {
             opacity: 1;
-            pointer-events: auto;
         }
 
         .label-row {
