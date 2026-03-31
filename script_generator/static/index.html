@@ -1744,9 +1744,16 @@
                     const content = document.getElementById('script-content');
                     content.innerHTML = '';
                     
-                    document.getElementById('cancel-btn').style.display = 'none'; 
-                    document.getElementById('return-btn').style.display = 'block'; 
-                    document.getElementById('continue-btn').style.display = 'block'; 
+                    if (document.getElementById('close-btn')) document.getElementById('close-btn').style.opacity = '';
+                    
+                    ['cancel-btn', 'return-btn', 'continue-btn'].forEach(id => {
+                        const btn = document.getElementById(id);
+                        if (btn) btn.style.display = ''; // Clear legacy inline styles
+                    });
+                    
+                    document.getElementById('cancel-btn').classList.add('action-hidden'); 
+                    document.getElementById('return-btn').classList.remove('action-hidden'); 
+                    document.getElementById('continue-btn').classList.remove('action-hidden'); 
                     
                     await new Promise(r => setTimeout(r, 850));
                     document.body.classList.add('is-island-top');
