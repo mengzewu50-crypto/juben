@@ -1185,14 +1185,26 @@
                     method: "POST", headers:{"Content-Type":"application/json"},
                     body: JSON.stringify({username: u, password: p})
                 });
-                const data = await res.json();
+                
+                let data;
+                try {
+                    data = await res.json();
+                } catch(e) {
+                    alert("服务器状态异常 (" + res.status + " " + res.statusText + ")，可能正在重启同步，请稍侯重试。");
+                    btn.innerText = "登录 / 注册";
+                    return;
+                }
+                
                 if (data.error) alert(data.error);
+                else if (data.detail) alert("系统错误: " + data.detail);
                 else {
                     authToken = data.token; authUser = data.username;
                     localStorage.setItem('authToken', authToken); localStorage.setItem('authUser', authUser);
                     toggleAuthModal(); updateAuthUI(); await fetchRemoteScripts();
                 }
-            } catch(e) { alert("网络错误"); }
+            } catch(e) { 
+                alert("网络连接中断，请检查您的网络设置"); 
+            }
             btn.innerText = "登录 / 注册";
         }
         
