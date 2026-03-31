@@ -1619,10 +1619,15 @@
                     clearInterval(checkDone);
                     if (typingInterval) clearInterval(typingInterval);
                     document.getElementById('script-content').innerHTML = marked.parse(fullScript);
-                    
+                    const tEra = document.getElementById('pill-text-era').innerText;
+                    const tLoc = document.getElementById('pill-text-location').innerText;
+                    const tIden = document.getElementById('pill-text-identity').innerText;
+                    const tRev = document.getElementById('pill-text-reversal').innerText;
+                    const tags = `${tEra}·${tLoc}·${tIden}·${tRev}`;
+
                     const existingIdx = historyData.findIndex(h => h.id === currentScriptId);
                     if (existingIdx > -1) { historyData[existingIdx].content = fullScript; }
-                    else { historyData.unshift({ id: currentScriptId, content: fullScript, date: new Date().toISOString() }); }
+                    else { historyData.push({ id: currentScriptId, content: fullScript, tags: tags, timestamp: Date.now(), pinned: false }); }
                     localStorage.setItem('scriptHistory', JSON.stringify(historyData));
                     renderHistory();
                 }
