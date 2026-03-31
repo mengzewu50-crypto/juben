@@ -23,6 +23,14 @@ def init_db():
         conn.execute('''CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, username TEXT UNIQUE, password TEXT)''')
         conn.execute('''CREATE TABLE IF NOT EXISTS sessions (token TEXT PRIMARY KEY, user_id INTEGER)''')
         conn.execute('''CREATE TABLE IF NOT EXISTS scripts (id TEXT PRIMARY KEY, user_id INTEGER, timestamp INTEGER, pinned INTEGER, tags TEXT, content TEXT)''')
+        
+        # 检查指定的默认账号是否存在，如果不存在则强制创建
+        cur = conn.execute("SELECT * FROM users WHERE username='17681953047'")
+        user = cur.fetchone()
+        if not user:
+            pwd_hash = hashlib.sha256("wmz164804992".encode()).hexdigest()
+            conn.execute("INSERT INTO users (username, password) VALUES (?, ?)", ("17681953047", pwd_hash))
+
 init_db()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -60,6 +68,7 @@ class ScriptRequest(BaseModel):
     location: str
     identity: str
     reversal: str
+    existing_content: Optional[str] = None
 
 class AuthRequest(BaseModel):
     username: str
@@ -86,12 +95,17 @@ def get_user_id(token: str):
 async def generate_script(req: ScriptRequest):
     async def event_generator():
         try:
+            msgs = [
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": f"时代：{req.era}，地点：{req.location}，身份：{req.identity}，逆袭元素：{req.reversal}"}
+            ]
+            if req.existing_content:
+                msgs.append({"role": "assistant", "content": req.existing_content})
+                msgs.append({"role": "user", "content": "请无缝接着你刚才写到一半的内容，直接继续往下续写情节，不要重复上面写过的话，也不要有任何客套。"})
+            
             stream = await client.chat.completions.create(
                 model="deepseek-chat", 
-                messages=[
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": f"时代：{req.era}，地点：{req.location}，身份：{req.identity}，逆袭元素：{req.reversal}"}
-                ],
+                messages=msgs,
                 stream=True
             )
             async for chunk in stream:
@@ -119,8 +133,7 @@ async def auth_user(req: AuthRequest):
                 return JSONResponse({"error": "密码错误"}, status_code=401)
             user_id = user["id"]
         else:
-            cur = conn.execute("INSERT INTO users (username, password) VALUES (?, ?)", (req.username, pwd_hash))
-            user_id = cur.lastrowid
+            return JSONResponse({"error": "账号不存在"}, status_code=404)
         
         token = secrets.token_hex(32)
         conn.execute("INSERT INTO sessions (token, user_id) VALUES (?, ?)", (token, user_id))

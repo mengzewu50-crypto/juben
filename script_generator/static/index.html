@@ -34,11 +34,11 @@
         }
 
         body.dark {
-            --bg-color: #0a0a0c;
+            --bg-color: #0d0d0f;
             --title-color: rgba(235, 235, 245, 0.5);
             --text-main: #f5f5f7;
             --text-placeholder: rgba(235, 235, 245, 0.65);
-            --glass-bg: rgba(30, 30, 40, 0.25);
+            --glass-bg: rgba(30, 30, 33, 0.35);
             --glass-border: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.02));
             /* 夜间转为哑光黑卡纸 */
             --paper-bg: #1c1c1e;
@@ -47,11 +47,11 @@
         }
 
         body.dark .bg-glow {
-            opacity: 0.25;
+            opacity: 0.35;
             background:
-                radial-gradient(circle at 15% 25%, rgba(65, 120, 255, 0.45) 0%, transparent 55%),
-                radial-gradient(circle at 85% 15%, rgba(150, 70, 220, 0.4) 0%, transparent 55%),
-                radial-gradient(circle at 50% 85%, rgba(100, 100, 200, 0.4) 0%, transparent 55%);
+                radial-gradient(circle at 15% 25%, rgba(70, 100, 200, 0.3) 0%, transparent 55%),
+                radial-gradient(circle at 85% 15%, rgba(130, 80, 180, 0.3) 0%, transparent 55%),
+                radial-gradient(circle at 50% 85%, rgba(100, 100, 180, 0.3) 0%, transparent 55%);
         }
 
         /* --- 2. 完美全圆角胶囊滚动条 --- */
@@ -109,7 +109,7 @@
         }
 
         body.dark .bg-glass-overlay {
-            background: rgba(10, 10, 12, 0.4);
+            background: rgba(14, 14, 16, 0.55);
             backdrop-filter: blur(80px) saturate(120%);
             -webkit-backdrop-filter: blur(80px) saturate(120%);
         }
@@ -188,7 +188,10 @@
             top: 50%;
             left: 50%;
             pointer-events: auto;
-            transform: translate(var(--tx), var(--ty)) scale(var(--s, 1));
+            translate: var(--tx) var(--ty);
+            scale: var(--s, 1);
+            transform: translateZ(0);
+            backface-visibility: hidden;
 
             /* Multi-layer glass: specular film + body tint */
             background:
@@ -229,7 +232,10 @@
                 inset  2px 0  3px rgba(255,255,255,0.45),
                 inset -2px 0  3px rgba(0,0,0,0.03);
 
-            transition: all 0.75s var(--return-bezier);
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            will-change: transform, translate, scale, width, height, opacity, box-shadow;
+            transform: translateZ(0);
+            backface-visibility: hidden;
             cursor: text;
         }
 
@@ -249,27 +255,24 @@
             z-index: 5;
         }
 
+        body.dark .island::before {
+            display: none;
+        }
+
         body.dark .island {
-            background:
-                linear-gradient(
-                    155deg,
-                    rgba(255,255,255,0.22) 0%,
-                    rgba(255,255,255,0.03) 38%,
-                    rgba(130,150,255,0.05) 100%
-                ),
-                rgba(36, 36, 52, 0.30);
+            background: rgba(36, 36, 52, 0.45);
             backdrop-filter: blur(44px) saturate(180%) brightness(0.92);
             -webkit-backdrop-filter: blur(44px) saturate(180%) brightness(0.92);
-            border-top-color:   rgba(255,255,255,0.28);
-            border-left-color:  rgba(255,255,255,0.18);
-            border-right-color: rgba(255,255,255,0.06);
-            border-bottom-color:rgba(255,255,255,0.05);
+            border-top-color:   rgba(255,255,255,0.08);
+            border-left-color:  rgba(255,255,255,0.05);
+            border-right-color: rgba(255,255,255,0.02);
+            border-bottom-color:rgba(255,255,255,0.02);
             box-shadow:
                 0  6px 16px  rgba(0,0,0,0.30),
                 0 20px 50px  rgba(0,0,0,0.28),
                 0 36px 80px  rgba(0,0,0,0.18),
-                0  0   0 1px rgba(255,255,255,0.10),
-                inset 0  2px  4px rgba(255,255,255,0.22),
+                0  0   0 1px rgba(255,255,255,0.05),
+                inset 0  1px  2px rgba(255,255,255,0.08),
                 inset 0 -2px  4px rgba(0,0,0,0.45);
         }
 
@@ -343,12 +346,25 @@
             opacity: 0.7;
         }
 
-        body.is-generating .island {
-            pointer-events: none;
-            transition: all 0.85s var(--apple-bezier);
+        body.is-hiding .island {
+            scale: 0 !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            transition: scale 0.4s cubic-bezier(0.36, -0.24, 0.26, 0.8), opacity 0.3s ease !important;
         }
 
-        body.is-generating .island-1 {
+        body.is-emerging-center .island {
+            transition: scale 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease !important;
+            transition-property: scale, opacity, box-shadow, border-color !important;
+        }
+
+        body.is-island-top .island {
+            pointer-events: none;
+            transition: scale 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease !important;
+            transition-property: scale, opacity, box-shadow, border-color !important;
+        }
+
+        body.is-island-top .island-1 {
             --tx: calc(-200% - 25px);
             --ty: calc(-50vh + 35px);
             width: 160px;
@@ -357,7 +373,7 @@
             padding: 0 15px;
         }
 
-        body.is-generating .island-2 {
+        body.is-island-top .island-2 {
             --tx: calc(-100% - 8px);
             --ty: calc(-50vh + 35px);
             width: 160px;
@@ -366,7 +382,7 @@
             padding: 0 15px;
         }
 
-        body.is-generating .island-3 {
+        body.is-island-top .island-3 {
             --tx: 8px;
             --ty: calc(-50vh + 35px);
             width: 160px;
@@ -375,7 +391,7 @@
             padding: 0 15px;
         }
 
-        body.is-generating .island-4 {
+        body.is-island-top .island-4 {
             --tx: calc(100% + 25px);
             --ty: calc(-50vh + 35px);
             width: 160px;
@@ -389,7 +405,6 @@
             flex-direction: column;
             justify-content: center;
             height: 100%;
-            transition: opacity 0.4s ease;
         }
 
         .pill-view {
@@ -401,7 +416,6 @@
             gap: 8px;
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.4s ease;
         }
 
         .pill-view svg {
@@ -422,12 +436,12 @@
             max-width: 100px;
         }
 
-        body.is-generating .normal-view {
+        body.is-island-top .normal-view {
             opacity: 0;
             pointer-events: none;
         }
 
-        body.is-generating .pill-view {
+        body.is-island-top .pill-view {
             opacity: 1;
         }
 
@@ -508,7 +522,12 @@
             border-bottom: 1px solid rgba(0,0,0,0.05);
             backdrop-filter: none;
             -webkit-backdrop-filter: none;
-            transition: all 0.85s var(--apple-bezier);
+            transition: width 0.85s var(--apple-bezier),
+                        height 0.85s var(--apple-bezier),
+                        border-radius 0.85s var(--apple-bezier),
+                        background-color 0.85s var(--apple-bezier),
+                        box-shadow 0.85s var(--apple-bezier),
+                        border-color 0.85s var(--apple-bezier);
         }
 
         body.is-generating .siri-sphere::before,
@@ -530,8 +549,17 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            transition: all 0.75s var(--return-bezier);
+            transition: width 0.75s var(--return-bezier),
+                        height 0.75s var(--return-bezier),
+                        border-radius 0.75s var(--return-bezier),
+                        background 0.75s var(--return-bezier),
+                        box-shadow 0.75s var(--return-bezier),
+                        border-color 0.75s var(--return-bezier),
+                        transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
             cursor: pointer;
+            will-change: width, height, border-radius, box-shadow, transform;
+            transform: translateZ(0);
+            backface-visibility: hidden;
 
             /* Glass body: deep blur lets colour core show through */
             background:
@@ -619,15 +647,12 @@
         }
 
         body:not(.is-generating) .siri-sphere:hover .siri-core {
-            animation-duration: 2s;
             filter: blur(24px);
             opacity: 0.95;
             transform: scale(1.15);
         }
 
-        body:not(.is-generating) .siri-sphere:hover .sphere-shell {
-            animation-duration: 1.5s;
-        }
+
 
         body.dark .siri-sphere {
             background:
@@ -652,6 +677,11 @@
                 0  0  30px 6px rgba(100,140,255,0.14),
                 inset 0  2px  5px rgba(255,255,255,0.30),
                 inset 0 -2px  5px rgba(0,0,0,0.50);
+        }
+
+        body.dark .btn-continue {
+            background: rgba(10, 132, 255, 0.15);
+            color: #0a84ff;
         }
 
 
@@ -737,6 +767,12 @@
         .btn-return {
             background: rgba(0, 0, 0, 0.05);
             color: var(--text-main);
+            display: none;
+        }
+
+        .btn-continue {
+            background: rgba(0, 122, 255, 0.1);
+            color: var(--apple-blue);
             display: none;
         }
 
@@ -1086,7 +1122,7 @@
                 <div class="label-row"><svg viewBox="0 0 24 24">
                         <path
                             d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
-                    </svg><label>时代背景</label></div><input type="text" id="era" placeholder="例如：古罗马">
+                    </svg><label>时代背景</label></div><input type="text" id="era" name="era_input" placeholder="例如：古罗马" autocomplete="new-password" spellcheck="false" data-lpignore="true">
             </div>
             <div class="pill-view"><svg viewBox="0 0 24 24">
                     <path
@@ -1098,7 +1134,7 @@
                 <div class="label-row"><svg viewBox="0 0 24 24">
                         <path
                             d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
-                    </svg><label>具体地点</label></div><input type="text" id="location" placeholder="例如：斗兽场">
+                    </svg><label>具体地点</label></div><input type="text" id="location" name="location_input" placeholder="例如：斗兽场" autocomplete="new-password" spellcheck="false" data-lpignore="true">
             </div>
             <div class="pill-view"><svg viewBox="0 0 24 24">
                     <path
@@ -1110,7 +1146,7 @@
                 <div class="label-row"><svg viewBox="0 0 24 24">
                         <path
                             d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                    </svg><label>底层身份</label></div><input type="text" id="identity" placeholder="例如：哑巴奴隶">
+                    </svg><label>底层身份</label></div><input type="text" id="identity" name="identity_input" placeholder="例如：哑巴奴隶" autocomplete="new-password" spellcheck="false" data-lpignore="true">
             </div>
             <div class="pill-view"><svg viewBox="0 0 24 24">
                     <path
@@ -1122,7 +1158,7 @@
                 <div class="label-row"><svg viewBox="0 0 24 24">
                         <path
                             d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zm0-5C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" />
-                    </svg><label>逆袭元素</label></div><input type="text" id="reversal" placeholder="例如：绝世长相">
+                    </svg><label>逆袭元素</label></div><input type="text" id="reversal" name="reversal_input" placeholder="例如：绝世长相" autocomplete="new-password" spellcheck="false" data-lpignore="true">
             </div>
             <div class="pill-view"><svg viewBox="0 0 24 24">
                     <path
@@ -1141,6 +1177,7 @@
                 </div>
                 <div class="action-bar">
                     <button class="action-btn btn-cancel" id="cancel-btn" onclick="cancelGen(event)">停止感悟</button>
+                    <button class="action-btn btn-continue" id="continue-btn" onclick="continueGen(event)">继续生成 →</button>
                     <button class="action-btn btn-return" id="return-btn" onclick="goBack(event)">← 记忆并回到原点</button>
                 </div>
             </div>
@@ -1149,20 +1186,20 @@
 
     <!-- Auth Modal -->
     <div class="auth-modal-overlay" id="auth-modal-overlay">
-        <div class="auth-modal">
+        <form class="auth-modal" onsubmit="event.preventDefault(); handleAuth();" autocomplete="on">
             <svg class="close-auth" viewBox="0 0 24 24" onclick="toggleAuthModal()">
                 <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
             </svg>
             <h3>账号登录</h3>
             <p>登录以保存和同步您的专属记忆</p>
-            <input class="auth-input" id="auth-username" type="text" placeholder="手机号/邮箱">
-            <input class="auth-input" id="auth-password" type="password" placeholder="密码">
-            <button class="auth-btn" id="auth-submit-btn" onclick="handleAuth()">登录 / 注册</button>
-        </div>
+            <input class="auth-input" id="auth-username" name="username" type="text" placeholder="手机号/邮箱" autocomplete="username">
+            <input class="auth-input" id="auth-password" name="password" type="password" placeholder="密码" autocomplete="current-password">
+            <button type="submit" class="auth-btn" id="auth-submit-btn">登录</button>
+        </form>
     </div>
 
     <script>
-        let abortController = null, fullScript = "";
+        let abortController = null, fullScript = "", currentScriptId = null;
         let historyData = JSON.parse(localStorage.getItem('scriptHistory')) || [];
         historyData = historyData.map(i => ({ id: i.id || Math.random().toString(36).substr(2, 9), timestamp: i.timestamp || Date.now(), pinned: i.pinned || false, tags: i.tags, content: i.content }));
         
@@ -1186,38 +1223,44 @@
                     body: JSON.stringify({username: u, password: p})
                 });
                 
-                let data;
+                let data = null;
                 try {
                     data = await res.json();
                 } catch(e) {
                     alert("服务器状态异常 (" + res.status + " " + res.statusText + ")，可能正在重启同步，请稍侯重试。");
-                    btn.innerText = "登录 / 注册";
                     return;
                 }
                 
-                if (data.error) alert(data.error);
-                else if (data.detail) alert("系统错误: " + data.detail);
-                else {
+                if (!res.ok) {
+                    const errorMsg = (data && data.error) ? data.error : ((data && data.detail) ? JSON.stringify(data.detail) : "请求失败");
+                    alert(errorMsg);
+                } else if (data && data.error) {
+                    alert(data.error);
+                } else if (data && data.token) {
                     authToken = data.token; authUser = data.username;
                     localStorage.setItem('authToken', authToken); localStorage.setItem('authUser', authUser);
                     toggleAuthModal(); updateAuthUI(); await fetchRemoteScripts();
+                } else {
+                    alert("未收到有效的登录凭证");
                 }
             } catch(e) { 
-                alert("网络连接中断，请检查您的网络设置"); 
+                alert("网络连接中断，请检查您的网络设置\n" + e.message); 
+            } finally {
+                if (!authToken) btn.innerText = "登录";
             }
-            btn.innerText = "登录 / 注册";
         }
         
         function updateAuthUI() {
             const icon = document.querySelector('.user-icon');
             if (authToken) {
-                icon.style.stroke = "var(--apple-blue)";
+                if(icon) icon.style.stroke = "var(--apple-blue)";
                 const h3 = document.querySelector('.auth-modal h3'), p = document.querySelector('.auth-modal p');
                 if(h3) h3.innerText = `欢迎! ${authUser}`;
                 if(p) p.innerText = "您已登录，正在云端保存您的剧本记忆";
                 document.getElementById('auth-username').style.display = 'none';
                 document.getElementById('auth-password').style.display = 'none';
                 const btn = document.getElementById('auth-submit-btn');
+                btn.type = "button";
                 btn.innerText = "退出登录";
                 btn.onclick = () => {
                     authToken = null; authUser = null;
@@ -1226,9 +1269,12 @@
                     if(h3) h3.innerText = `账号登录`;
                     if(p) p.innerText = "登录以保存和同步您的专属记忆";
                     document.getElementById('auth-username').style.display = '';
+                    document.getElementById('auth-username').value = '';
                     document.getElementById('auth-password').style.display = '';
-                    btn.innerText = "登录 / 注册"; btn.onclick = handleAuth;
-                    icon.style.stroke = "var(--text-main)";
+                    document.getElementById('auth-password').value = '';
+                    btn.type = "submit";
+                    btn.innerText = "登录"; btn.onclick = null;
+                    if(icon) icon.style.stroke = "var(--text-main)";
                     toggleAuthModal();
                 };
             }
@@ -1269,24 +1315,46 @@
 
         async function startGenerate() {
             if (document.body.classList.contains('is-generating')) return;
+
+            const RANDOM_ERAS = ["修仙乱世", "赛博朋克", "星际帝国", "末日废土", "大唐盛世", "蒸汽朋克", "深海纪元", "上古神话", "赛博武侠", "克苏鲁世界"];
+            const RANDOM_LOCATIONS = ["地下黑市", "浮空要塞", "星际垃圾场", "皇家地牢", "废弃神庙", "第九疯人院", "巨物尸骸内部", "赛博贫民窟", "修仙外院", "深渊第一层"];
+            const RANDOM_IDENTITIES = ["扫地杂役", "基因残缺者", "流放皇族", "废土拾荒客", "无名仵作", "落魄散修", "最后神明", "瞎眼盲仆", "报废仿生人", "守夜人"];
+            const RANDOM_REVERSALS = ["随身吞噬系统", "左眼看穿生死", "附身亡灵禁卷", "异变治愈之血", "古神低语共生", "一键满级面板", "隐藏军火库", "斩断时间之剑", "终极BOSS转世", "无限时间回溯"];
+            
+            const randomDict = {
+                'era': RANDOM_ERAS,
+                'location': RANDOM_LOCATIONS,
+                'identity': RANDOM_IDENTITIES,
+                'reversal': RANDOM_REVERSALS
+            };
+
             ['era', 'location', 'identity', 'reversal'].forEach(id => {
                 const el = document.getElementById(id);
-                const v = el.value || el.placeholder.replace('例如：', '');
+                let v = el.value.trim();
+                if (!v) {
+                    v = randomDict[id][Math.floor(Math.random() * randomDict[id].length)];
+                }
                 const textEl = document.getElementById(`pill-text-${id}`);
                 textEl.innerText = v;
-                textEl.style.color = el.value ? 'var(--text-main)' : 'var(--text-placeholder)';
+                textEl.style.color = 'var(--text-main)';
             });
 
+            document.body.classList.add('is-hiding');
             document.body.classList.add('is-generating');
             const content = document.getElementById('script-content'), wrapper = document.getElementById('script-wrapper');
             const cBtn = document.getElementById('cancel-btn'), rBtn = document.getElementById('return-btn'), scroll = document.getElementById('scroll-area');
 
-            wrapper.style.transition = 'opacity 0.6s ease 0.4s'; wrapper.style.opacity = '1';
-            cBtn.style.display = 'block'; rBtn.style.display = 'none';
-            content.innerText = "时空链接中..."; fullScript = ""; abortController = new AbortController();
+            wrapper.style.transition = 'opacity 0.6s ease'; wrapper.style.opacity = '1';
+            cBtn.style.display = 'block'; rBtn.style.display = 'none'; document.getElementById('continue-btn').style.display = 'none';
+            content.innerText = "时空链接中..."; fullScript = ""; currentScriptId = Math.random().toString(36).substr(2, 9); abortController = new AbortController();
+
+            // Wait for sphere to fully expand before fetching and showing islands at the top
+            await new Promise(r => setTimeout(r, 850));
+            document.body.classList.add('is-island-top');
+            document.body.classList.remove('is-hiding');
 
             try {
-                const res = await fetch('/api/generate_script', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ era: document.getElementById('era').value, location: document.getElementById('location').value, identity: document.getElementById('identity').value, reversal: document.getElementById('reversal').value }), signal: abortController.signal });
+                const res = await fetch('/api/generate_script', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ era: document.getElementById('pill-text-era').innerText, location: document.getElementById('pill-text-location').innerText, identity: document.getElementById('pill-text-identity').innerText, reversal: document.getElementById('pill-text-reversal').innerText }), signal: abortController.signal });
                 const reader = res.body.getReader(), decoder = new TextDecoder();
                 content.innerText = "";
                 let buffer = "";
@@ -1310,23 +1378,110 @@
         }
 
         function cancelGen(e) { e.stopPropagation(); if (abortController) abortController.abort(); }
-        function finishGen() { document.getElementById('cancel-btn').style.display = 'none'; document.getElementById('return-btn').style.display = 'block'; if (fullScript.length > 20) { saveItem({ tags: `${document.getElementById('era').value || '时代'}·${document.getElementById('identity').value || '身份'}`, content: fullScript }); } }
+        
+        async function continueGen(e) {
+            e.stopPropagation();
+            if (document.getElementById('continue-btn').innerText === "时空链接中...") return;
+            
+            document.getElementById('cancel-btn').style.display = 'block'; 
+            document.getElementById('return-btn').style.display = 'none'; 
+            document.getElementById('continue-btn').style.display = 'none'; 
+            
+            abortController = new AbortController();
+            const content = document.getElementById('script-content');
+            const scroll = document.getElementById('scroll-area');
+            
+            if (!fullScript.endsWith('\n') && !fullScript.endsWith(']')) {
+                fullScript += '\n\n';
+                content.innerText = fullScript;
+            }
+            if (fullScript.endsWith('[ 已停止 ]')) {
+                fullScript = fullScript.replace('\n\n[ 已停止 ]', '\n\n');
+                content.innerText = fullScript;
+            }
+            
+            try {
+                const reqBody = {
+                     era: document.getElementById('pill-text-era').innerText, 
+                     location: document.getElementById('pill-text-location').innerText, 
+                     identity: document.getElementById('pill-text-identity').innerText, 
+                     reversal: document.getElementById('pill-text-reversal').innerText,
+                     existing_content: fullScript
+                };
+                
+                const res = await fetch('/api/generate_script', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify(reqBody), 
+                    signal: abortController.signal 
+                });
+                const reader = res.body.getReader(), decoder = new TextDecoder();
+                let buffer = "";
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n'); buffer = lines.pop();
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const dataStr = line.slice(6);
+                            if (dataStr === '[DONE]') { finishGen(); break; }
+                            try {
+                                const parsed = JSON.parse(dataStr);
+                                if (parsed.content) { fullScript += parsed.content; content.innerText = fullScript; scroll.scrollTop = scroll.scrollHeight; }
+                            } catch (e) { }
+                        }
+                    }
+                }
+            } catch (e) { if (e.name === 'AbortError') content.innerText += "\n\n[ 已停止 ]"; finishGen(); }
+        }
+
+        function finishGen() { 
+            document.getElementById('cancel-btn').style.display = 'none'; 
+            document.getElementById('return-btn').style.display = 'block'; 
+            document.getElementById('continue-btn').style.display = 'block'; 
+            if (fullScript.length > 20) { 
+                const tagsStr = ['era', 'location', 'identity', 'reversal'].map(id => document.getElementById(`pill-text-${id}`).innerText || '未知').join('·');
+                
+                let existing = historyData.find(x => x.id === currentScriptId);
+                if (existing) {
+                    existing.content = fullScript;
+                    existing.timestamp = Date.now();
+                    saveData();
+                } else {
+                    saveItem({ id: currentScriptId, tags: tagsStr, content: fullScript }); 
+                }
+            } 
+        }
 
         function goBack(e) {
             e.stopPropagation();
             const wrapper = document.getElementById('script-wrapper');
             wrapper.style.transition = 'opacity 0.3s ease'; 
             wrapper.style.opacity = '0';
+            
+            ['era', 'location', 'identity', 'reversal'].forEach(id => {
+                document.getElementById(id).value = '';
+            });
+
+            document.body.classList.add('is-hiding');
             document.body.classList.remove('is-generating');
+            
             setTimeout(() => { 
+                document.body.classList.remove('is-island-top');
+                document.body.classList.remove('is-hiding');
+                document.body.classList.add('is-emerging-center');
+                
                 document.getElementById('script-content').innerText = ""; 
                 wrapper.style.transition = ''; 
                 wrapper.style.opacity = ''; 
+                
+                setTimeout(() => document.body.classList.remove('is-emerging-center'), 550);
             }, 750);
         }
 
         function saveData() { localStorage.setItem('scriptHistory', JSON.stringify(historyData)); renderHistory(); syncRemoteScripts(); }
-        function saveItem(item) { historyData.push({ id: Math.random().toString(36).substr(2, 9), timestamp: Date.now(), pinned: false, ...item }); saveData(); }
+        function saveItem(item) { historyData.push({ id: item.id || Math.random().toString(36).substr(2, 9), timestamp: Date.now(), pinned: false, ...item }); saveData(); }
 
         function toggleMenu(e, id) { e.stopPropagation(); document.querySelectorAll('.item-action-menu').forEach(m => { if (m.id !== `menu-${id}`) m.classList.remove('show'); }); document.getElementById(`menu-${id}`).classList.toggle('show'); }
         function pinItem(e, id) { e.stopPropagation(); const i = historyData.find(x => x.id === id); if (i) i.pinned = !i.pinned; saveData(); }
@@ -1348,7 +1503,37 @@
                     <div class="menu-action" onclick="deleteItem(event, '${item.id}')" style="color:#ff3b30">删除记忆</div>
                 </div>
             `;
-                div.onclick = (e) => { if (e.target.closest('.item-menu-btn') || e.target.closest('.item-action-menu')) return; toggleDrawer(); document.body.classList.add('is-generating'); const wrapper = document.getElementById('script-wrapper'); wrapper.style.transition = 'opacity 0.6s ease 0.4s'; wrapper.style.opacity = '1'; document.getElementById('script-content').innerText = item.content; document.getElementById('cancel-btn').style.display = 'none'; document.getElementById('return-btn').style.display = 'block'; };
+                div.onclick = async (e) => { 
+                    if (e.target.closest('.item-menu-btn') || e.target.closest('.item-action-menu')) return; 
+                    toggleDrawer(); 
+                    
+                    let tagParts = item.tags.split('·');
+                    if (tagParts.length === 2) tagParts = [tagParts[0], '未知地点', tagParts[1], '未知反转'];
+                    
+                    ['era', 'location', 'identity', 'reversal'].forEach((id, idx) => {
+                        const v = tagParts[idx] || '';
+                        document.getElementById(`pill-text-${id}`).innerText = v;
+                        document.getElementById(`pill-text-${id}`).style.color = 'var(--text-main)';
+                    });
+
+                    document.body.classList.add('is-hiding');
+                    document.body.classList.add('is-generating'); 
+                    
+                    currentScriptId = item.id;
+                    fullScript = item.content;
+                    
+                    const wrapper = document.getElementById('script-wrapper'); 
+                    wrapper.style.transition = 'opacity 0.6s ease'; 
+                    wrapper.style.opacity = '1'; 
+                    document.getElementById('script-content').innerText = fullScript; 
+                    document.getElementById('cancel-btn').style.display = 'none'; 
+                    document.getElementById('return-btn').style.display = 'block'; 
+                    document.getElementById('continue-btn').style.display = 'block'; 
+                    
+                    await new Promise(r => setTimeout(r, 850));
+                    document.body.classList.add('is-island-top');
+                    document.body.classList.remove('is-hiding');
+                };
                 list.appendChild(div);
             });
         }
