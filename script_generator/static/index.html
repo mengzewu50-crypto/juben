@@ -499,6 +499,44 @@
             transition: all 0.75s var(--return-bezier);
         }
 
+        .close-btn {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.05);
+            color: var(--text-main);
+            border: none;
+            cursor: pointer;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+
+        body.dark .close-btn {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .close-btn:hover {
+            background: rgba(0, 0, 0, 0.1);
+            transform: scale(1.05);
+        }
+        
+        body.dark .close-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        body.is-generating .close-btn {
+            pointer-events: auto;
+            opacity: 1;
+        }
+
         body.is-generating .siri-sphere-center {
             top: calc(50% + 30px);
             width: 88vw;
@@ -510,55 +548,42 @@
             transition: all 0.85s var(--apple-bezier);
         }
 
-        /* 展开后变为液态磨砂玻璃 */
+        /* 展开后变为羊皮纸效果 */
         body.is-generating .siri-sphere {
             border-radius: 40px;
             cursor: default;
             
-            background:
-                linear-gradient(
-                    145deg,
-                    rgba(255,255,255,0.62) 0%,
-                    rgba(255,255,255,0.10) 38%,
-                    rgba(200,215,255,0.06) 68%,
-                    rgba(255,255,255,0.20) 100%
-                ),
-                rgba(255,255,255,0.18);
-            backdrop-filter: blur(34px) saturate(220%) brightness(1.05);
-            -webkit-backdrop-filter: blur(34px) saturate(220%) brightness(1.05);
-            border-top:    1.5px solid rgba(255,255,255,0.7);
-            border-left:   1px   solid rgba(255,255,255,0.4);
-            border-right:  1px   solid rgba(255,255,255,0.15);
-            border-bottom: 1px   solid rgba(255,255,255,0.1);
+            background-color: var(--paper-bg);
+            background-image: var(--paper-grain);
             
-            box-shadow:
-                0 16px 40px rgba(0,0,0,0.08),
-                0 0 0 1.5px rgba(255,255,255,0.2),
-                inset 0 2px 4px rgba(255,255,255,0.8);
+            border-top:    1px solid rgba(0,0,0,0.05);
+            border-left:   1px solid rgba(0,0,0,0.05);
+            border-right:  1px solid rgba(0,0,0,0.05);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.15);
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
             
             transition: width 0.85s var(--apple-bezier),
                         height 0.85s var(--apple-bezier),
                         border-radius 0.85s var(--apple-bezier),
                         background 0.85s var(--apple-bezier),
+                        background-color 0.85s var(--apple-bezier),
                         box-shadow 0.85s var(--apple-bezier),
                         border-color 0.85s var(--apple-bezier);
         }
-
+        
         body.dark.is-generating .siri-sphere {
-            background: rgba(36, 36, 52, 0.45);
-            backdrop-filter: blur(44px) saturate(180%) brightness(0.92);
-            -webkit-backdrop-filter: blur(44px) saturate(180%) brightness(0.92);
-            border-top-color:   rgba(255,255,255,0.08);
-            border-left-color:  rgba(255,255,255,0.05);
-            border-right-color: rgba(255,255,255,0.02);
-            border-bottom-color:rgba(255,255,255,0.02);
-            box-shadow:
-                0  6px 16px  rgba(0,0,0,0.30),
-                0 20px 50px  rgba(0,0,0,0.28),
-                0 36px 80px  rgba(0,0,0,0.18),
-                0  0   0 1px rgba(255,255,255,0.05),
-                inset 0  1px  2px rgba(255,255,255,0.08),
-                inset 0 -2px  4px rgba(0,0,0,0.45);
+            background-color: var(--paper-bg);
+            background-image: var(--paper-grain);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3);
+            border-top:    1px solid rgba(255,255,255,0.05);
+            border-left:   1px solid rgba(255,255,255,0.05);
+            border-right:  1px solid rgba(255,255,255,0.05);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
         }
 
         body.is-generating .siri-sphere::before,
@@ -755,7 +780,6 @@
         }
 
         body.is-generating .script-content-wrapper {
-            opacity: 1;
             pointer-events: auto;
         }
 
@@ -815,6 +839,9 @@
             padding: 20px;
             display: flex;
             justify-content: center;
+            align-items: center;
+            min-height: 80px;
+            box-sizing: border-box;
         }
 
         .action-btn {
@@ -824,25 +851,52 @@
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            transition: 0.4s;
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform: scale(1);
+            opacity: 1;
+            margin: 0 8px;
+            max-width: 250px;
+            white-space: nowrap;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .action-btn:hover {
+            transform: scale(1.03) translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        body.dark .action-btn:hover {
+            box-shadow: 0 4px 12px rgba(255,255,255,0.05);
+        }
+
+        .action-btn.action-hidden {
+            max-width: 0;
+            padding-left: 0;
+            padding-right: 0;
+            margin-left: 0;
+            margin-right: 0;
+            opacity: 0;
+            border-width: 0;
+            transform: scale(0.5);
+            pointer-events: none;
         }
 
         .btn-cancel {
             background: rgba(255, 59, 48, 0.1);
             color: #ff3b30;
-            display: none;
         }
 
         .btn-return {
             background: rgba(0, 0, 0, 0.05);
             color: var(--text-main);
-            display: none;
         }
 
         .btn-continue {
             background: rgba(0, 122, 255, 0.1);
             color: var(--apple-blue);
-            display: none;
         }
 
         /* --- 记忆抽屉 --- */
@@ -1240,14 +1294,18 @@
         <div class="siri-sphere" onclick="startGenerate()">
             <div class="sphere-shell"></div>
             <div class="siri-core"></div>
+            
+            <button id="close-btn" class="close-btn" onclick="deleteAndGoBack(event)" title="删除并返回">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
             <div class="script-content-wrapper" id="script-wrapper">
                 <div class="script-scroll-area" id="scroll-area">
                     <div class="script-text" id="script-content"></div>
                 </div>
                 <div class="action-bar">
-                    <button class="action-btn btn-cancel" id="cancel-btn" onclick="cancelGen(event)">停止感悟</button>
-                    <button class="action-btn btn-continue" id="continue-btn" onclick="continueGen(event)">继续生成 →</button>
-                    <button class="action-btn btn-return" id="return-btn" onclick="goBack(event)">← 记忆并回到原点</button>
+                    <button class="action-btn btn-cancel action-hidden" id="cancel-btn" onclick="cancelGen(event)">停止感悟</button>
+                    <button class="action-btn btn-continue action-hidden" id="continue-btn" onclick="continueGen(event)">继续生成 →</button>
+                    <button class="action-btn btn-return action-hidden" id="return-btn" onclick="goBack(event)">← 记忆并回到原点</button>
                 </div>
             </div>
         </div>
@@ -1268,12 +1326,33 @@
     </div>
 
     <script>
-        let abortController = null, fullScript = "", currentScriptId = null;
         let historyData = JSON.parse(localStorage.getItem('scriptHistory')) || [];
         historyData = historyData.map(i => ({ id: i.id || Math.random().toString(36).substr(2, 9), timestamp: i.timestamp || Date.now(), pinned: i.pinned || false, tags: i.tags, content: i.content }));
         
         let authToken = localStorage.getItem('authToken');
         let authUser = localStorage.getItem('authUser');
+        let currentScriptId = null;
+        let fullScript = "";
+        let abortController = null;
+        let typingQueue = "";
+        let typingInterval = null;
+        let isStreamDone = false;
+        
+        function processTyping() {
+            if (typingQueue.length > 0) {
+                let charsToTake = Math.max(1, Math.floor(typingQueue.length / 5)); 
+                fullScript += typingQueue.substring(0, charsToTake);
+                typingQueue = typingQueue.substring(charsToTake);
+                
+                const cursorHtml = (typingQueue.length > 0 || !isStreamDone) ? '<span class="typing-cursor"></span>' : '';
+                document.getElementById('script-content').innerHTML = marked.parse(fullScript) + cursorHtml;
+                
+                const scroll = document.getElementById('scroll-area');
+                if (scroll) scroll.scrollTop = scroll.scrollHeight;
+            } else if (isStreamDone && document.querySelector('.typing-cursor')) {
+               document.getElementById('script-content').innerHTML = marked.parse(fullScript);
+            }
+        }
         
         // Initial setup
         updateAuthUI();
@@ -1411,13 +1490,23 @@
             document.body.classList.add('is-hiding');
             document.body.classList.add('is-generating');
             const content = document.getElementById('script-content'), wrapper = document.getElementById('script-wrapper');
-            const cBtn = document.getElementById('cancel-btn'), rBtn = document.getElementById('return-btn'), scroll = document.getElementById('scroll-area');
-
-            wrapper.style.transition = 'opacity 0.6s ease'; wrapper.style.opacity = '1';
-            cBtn.style.display = 'block'; rBtn.style.display = 'none'; document.getElementById('continue-btn').style.display = 'none';
+            const cBtn = document.getElementById('cancel-btn'), rBtn = document.getElementById('return-btn');
+            
+            wrapper.style.transition = 'opacity 0.6s ease'; 
+            wrapper.style.opacity = '1'; 
+            if (document.getElementById('close-btn')) document.getElementById('close-btn').style.opacity = '';
+            
+            cBtn.classList.remove('action-hidden'); 
+            rBtn.classList.add('action-hidden'); 
+            document.getElementById('continue-btn').classList.add('action-hidden');
+            
             content.innerHTML = "时空链接中..."; fullScript = ""; currentScriptId = Math.random().toString(36).substr(2, 9); abortController = new AbortController();
 
-            // Wait for sphere to fully expand before fetching and showing islands at the top
+            typingQueue = "";
+            isStreamDone = false;
+            if (typingInterval) clearInterval(typingInterval);
+            typingInterval = setInterval(processTyping, 40);
+
             await new Promise(r => setTimeout(r, 850));
             document.body.classList.add('is-island-top');
             document.body.classList.remove('is-hiding');
@@ -1438,12 +1527,12 @@
                             if (dataStr === '[DONE]') { finishGen(); break; }
                             try {
                                 const parsed = JSON.parse(dataStr);
-                                if (parsed.content) { fullScript += parsed.content; content.innerHTML = marked.parse(fullScript); scroll.scrollTop = scroll.scrollHeight; }
+                                if (parsed.content) { typingQueue += parsed.content; }
                             } catch (e) { }
                         }
                     }
                 }
-            } catch (e) { if (e.name === 'AbortError') { fullScript += "\n\n[ 已停止 ]"; content.innerHTML = marked.parse(fullScript); } finishGen(); }
+            } catch (e) { if (e.name === 'AbortError') { typingQueue += "\n\n[ 已停止 ]"; } finishGen(); }
         }
 
         function cancelGen(e) { e.stopPropagation(); if (abortController) abortController.abort(); }
@@ -1452,21 +1541,24 @@
             e.stopPropagation();
             if (document.getElementById('continue-btn').innerText === "时空链接中...") return;
             
-            document.getElementById('cancel-btn').style.display = 'block'; 
-            document.getElementById('return-btn').style.display = 'none'; 
-            document.getElementById('continue-btn').style.display = 'none'; 
+            document.getElementById('return-btn').classList.add('action-hidden'); 
+            document.getElementById('continue-btn').classList.add('action-hidden'); 
+            setTimeout(() => {
+                document.getElementById('cancel-btn').classList.remove('action-hidden'); 
+            }, 400);
+
+            if (document.getElementById('close-btn')) document.getElementById('close-btn').style.opacity = '';
             
             abortController = new AbortController();
             const content = document.getElementById('script-content');
-            const scroll = document.getElementById('scroll-area');
+            
+            typingQueue = "";
+            isStreamDone = false;
+            if (typingInterval) clearInterval(typingInterval);
+            typingInterval = setInterval(processTyping, 40);
             
             if (!fullScript.endsWith('\n') && !fullScript.endsWith(']')) {
                 fullScript += '\n\n';
-                content.innerHTML = marked.parse(fullScript);
-            }
-            if (fullScript.endsWith('[ 已停止 ]')) {
-                fullScript = fullScript.replace('\n\n[ 已停止 ]', '\n\n');
-                content.innerHTML = marked.parse(fullScript);
             }
             
             try {
@@ -1497,56 +1589,111 @@
                             if (dataStr === '[DONE]') { finishGen(); break; }
                             try {
                                 const parsed = JSON.parse(dataStr);
-                                if (parsed.content) { fullScript += parsed.content; content.innerHTML = marked.parse(fullScript); scroll.scrollTop = scroll.scrollHeight; }
+                                if (parsed.content) { typingQueue += parsed.content; }
                             } catch (e) { }
                         }
                     }
                 }
-            } catch (e) { if (e.name === 'AbortError') { fullScript += "\n\n[ 已停止 ]"; content.innerHTML = marked.parse(fullScript); } finishGen(); }
+            } catch (e) { if (e.name === 'AbortError') { typingQueue += "\n\n[ 已停止 ]"; } finishGen(); }
         }
 
         function finishGen() { 
-            document.getElementById('cancel-btn').style.display = 'none'; 
-            document.getElementById('return-btn').style.display = 'block'; 
-            document.getElementById('continue-btn').style.display = 'block'; 
-            if (fullScript.length > 20) { 
-                const tagsStr = ['era', 'location', 'identity', 'reversal'].map(id => document.getElementById(`pill-text-${id}`).innerText || '未知').join('·');
-                
-                let existing = historyData.find(x => x.id === currentScriptId);
-                if (existing) {
-                    existing.content = fullScript;
-                    existing.timestamp = Date.now();
-                    saveData();
-                } else {
-                    saveItem({ id: currentScriptId, tags: tagsStr, content: fullScript }); 
+            isStreamDone = true;
+            
+            const cBtn = document.getElementById('cancel-btn');
+            // If cancel is NOT hidden, we perform the sequenced animation
+            if (!cBtn.classList.contains('action-hidden')) {
+                cBtn.classList.add('action-hidden'); 
+                setTimeout(() => {
+                    document.getElementById('return-btn').classList.remove('action-hidden'); 
+                    document.getElementById('continue-btn').classList.remove('action-hidden'); 
+                }, 400);
+            } else {
+                // Defensive catch-all to ensure they are visible
+                document.getElementById('return-btn').classList.remove('action-hidden'); 
+                document.getElementById('continue-btn').classList.remove('action-hidden');
+            }
+
+            const checkDone = setInterval(() => {
+                if (typingQueue.length === 0) {
+                    clearInterval(checkDone);
+                    if (typingInterval) clearInterval(typingInterval);
+                    document.getElementById('script-content').innerHTML = marked.parse(fullScript);
+                    
+                    const existingIdx = historyData.findIndex(h => h.id === currentScriptId);
+                    if (existingIdx > -1) { historyData[existingIdx].content = fullScript; }
+                    else { historyData.unshift({ id: currentScriptId, content: fullScript, date: new Date().toISOString() }); }
+                    localStorage.setItem('scriptHistory', JSON.stringify(historyData));
+                    renderHistory();
                 }
-            } 
+            }, 100);
+        }
+
+        function deleteAndGoBack(e) {
+            e.stopPropagation();
+            if (abortController) abortController.abort();
+            
+            const idx = historyData.findIndex(h => h.id === currentScriptId);
+            if (idx !== -1) {
+                historyData.splice(idx, 1);
+                localStorage.setItem('scriptHistory', JSON.stringify(historyData));
+                renderHistory();
+            }
+            
+            goBack(e);
         }
 
         function goBack(e) {
-            e.stopPropagation();
+            if (e) e.stopPropagation();
+            if (document.body.classList.contains('is-history-open')) return;
+
+            isStreamDone = true;
+            if (typingInterval) clearInterval(typingInterval);
+            typingQueue = "";
+
             const wrapper = document.getElementById('script-wrapper');
-            wrapper.style.transition = 'opacity 0.3s ease'; 
+            wrapper.style.transition = 'opacity 0.25s ease'; 
             wrapper.style.opacity = '0';
+            if (document.getElementById('close-btn')) document.getElementById('close-btn').style.opacity = '0';
+            
+            ['cancel-btn', 'return-btn', 'continue-btn'].forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) btn.classList.add('action-hidden');
+            });
             
             ['era', 'location', 'identity', 'reversal'].forEach(id => {
-                document.getElementById(id).value = '';
+                const el = document.getElementById(id);
+                el.value = '';
+                const textEl = document.getElementById(`pill-text-${id}`);
+                textEl.innerText = el.getAttribute('placeholder');
+                textEl.style.color = 'var(--text-placeholder)';
             });
 
+            // Start container shrinking concurrently with button fade out
             document.body.classList.add('is-hiding');
             document.body.classList.remove('is-generating');
+            document.body.classList.remove('is-island-top');
             
+            // Allow opacity to completely fade (250ms) before clearing innerHTML
             setTimeout(() => { 
-                document.body.classList.remove('is-island-top');
-                document.getElementById('script-content').innerHTML = '';  document.body.classList.remove('is-hiding');
-                document.body.classList.add('is-emerging-center');
-                
-                document.getElementById('script-content').innerText = ""; 
+                document.getElementById('script-content').innerHTML = '';
+            }, 250);
+
+            // Show pills after container shrink completes (e.g., 600ms)
+            setTimeout(() => {
+                document.body.classList.remove('is-hiding');
                 wrapper.style.transition = ''; 
-                wrapper.style.opacity = ''; 
+                wrapper.style.opacity = '';
                 
-                setTimeout(() => document.body.classList.remove('is-emerging-center'), 550);
-            }, 750);
+                const pills = document.querySelectorAll('.pill-input');
+                let startDelay = 50;
+                pills.forEach((pill, i) => {
+                    setTimeout(() => {
+                        pill.classList.remove('pill-hidden');
+                        pill.style.visibility = 'visible';
+                    }, startDelay + (i * 60));
+                });
+            }, 600);
         }
 
         function saveData() { localStorage.setItem('scriptHistory', JSON.stringify(historyData)); renderHistory(); syncRemoteScripts(); }
