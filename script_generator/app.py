@@ -3,9 +3,27 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from typing import List, Optional
 from openai import AsyncOpenAI
+import sqlite3
+import hashlib
+import secrets
+from fastapi import Header
+from fastapi.responses import JSONResponse
 
 app = FastAPI()
+
+def get_db():
+    conn = sqlite3.connect("juben.db", check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def init_db():
+    with get_db() as conn:
+        conn.execute('''CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, username TEXT UNIQUE, password TEXT)''')
+        conn.execute('''CREATE TABLE IF NOT EXISTS sessions (token TEXT PRIMARY KEY, user_id INTEGER)''')
+        conn.execute('''CREATE TABLE IF NOT EXISTS scripts (id TEXT PRIMARY KEY, user_id INTEGER, timestamp INTEGER, pinned INTEGER, tags TEXT, content TEXT)''')
+init_db()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 SYSTEM_PROMPT = """你是一个专门制作“草根逆袭类”短视频的顶级文案策划。
@@ -43,6 +61,27 @@ class ScriptRequest(BaseModel):
     identity: str
     reversal: str
 
+class AuthRequest(BaseModel):
+    username: str
+    password: str
+
+class ScriptItem(BaseModel):
+    id: str
+    timestamp: int
+    pinned: bool
+    tags: str
+    content: str
+    
+class SyncRequest(BaseModel):
+    scripts: List[ScriptItem]
+
+def get_user_id(token: str):
+    if not token or not token.startswith("Bearer "): return None
+    t = token.replace("Bearer ", "")
+    with get_db() as conn:
+        row = conn.execute("SELECT user_id FROM sessions WHERE token=?", (t,)).fetchone()
+        return row["user_id"] if row else None
+
 @app.post("/api/generate_script")
 async def generate_script(req: ScriptRequest):
     async def event_generator():
@@ -69,3 +108,42 @@ async def generate_script(req: ScriptRequest):
 @app.get("/")
 async def read_index():
     return FileResponse("static/index.html")
+
+@app.post("/api/auth")
+async def auth_user(req: AuthRequest):
+    pwd_hash = hashlib.sha256(req.password.encode()).hexdigest()
+    with get_db() as conn:
+        user = conn.execute("SELECT * FROM users WHERE username=?", (req.username,)).fetchone()
+        if user:
+            if user["password"] != pwd_hash:
+                return JSONResponse({"error": "密码错误"}, status_code=401)
+            user_id = user["id"]
+        else:
+            cur = conn.execute("INSERT INTO users (username, password) VALUES (?, ?)", (req.username, pwd_hash))
+            user_id = cur.lastrowid
+        
+        token = secrets.token_hex(32)
+        conn.execute("INSERT INTO sessions (token, user_id) VALUES (?, ?)", (token, user_id))
+    return {"token": token, "username": req.username}
+
+@app.get("/api/scripts")
+async def get_scripts(authorization: Optional[str] = Header(None)):
+    user_id = get_user_id(authorization)
+    if not user_id: return JSONResponse({"error": "未登录"}, status_code=401)
+    
+    with get_db() as conn:
+        rows = conn.execute("SELECT * FROM scripts WHERE user_id=? ORDER BY timestamp DESC", (user_id,)).fetchall()
+        return [{"id": r["id"], "timestamp": r["timestamp"], "pinned": bool(r["pinned"]), "tags": r["tags"], "content": r["content"]} for r in rows]
+
+@app.post("/api/scripts/sync")
+async def sync_scripts(req: SyncRequest, authorization: Optional[str] = Header(None)):
+    user_id = get_user_id(authorization)
+    if not user_id: return JSONResponse({"error": "未登录"}, status_code=401)
+    
+    with get_db() as conn:
+        # 简单粗暴：删除所有的，再重新插入（同步）
+        conn.execute("DELETE FROM scripts WHERE user_id=?", (user_id,))
+        for s in req.scripts:
+            conn.execute("INSERT INTO scripts (id, user_id, timestamp, pinned, tags, content) VALUES (?, ?, ?, ?, ?, ?)", 
+                         (s.id, user_id, s.timestamp, int(s.pinned), s.tags, s.content))
+    return {"success": True}

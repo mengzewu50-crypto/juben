@@ -1148,9 +1148,9 @@
             </svg>
             <h3>账号登录</h3>
             <p>登录以保存和同步您的专属记忆</p>
-            <input class="auth-input" type="text" placeholder="手机号/邮箱">
-            <input class="auth-input" type="password" placeholder="密码">
-            <button class="auth-btn" onclick="alert('即将开放，敬请期待！')">登录 / 注册</button>
+            <input class="auth-input" id="auth-username" type="text" placeholder="手机号/邮箱">
+            <input class="auth-input" id="auth-password" type="password" placeholder="密码">
+            <button class="auth-btn" id="auth-submit-btn" onclick="handleAuth()">登录 / 注册</button>
         </div>
     </div>
 
@@ -1158,7 +1158,81 @@
         let abortController = null, fullScript = "";
         let historyData = JSON.parse(localStorage.getItem('scriptHistory')) || [];
         historyData = historyData.map(i => ({ id: i.id || Math.random().toString(36).substr(2, 9), timestamp: i.timestamp || Date.now(), pinned: i.pinned || false, tags: i.tags, content: i.content }));
-        saveData();
+        
+        let authToken = localStorage.getItem('authToken');
+        let authUser = localStorage.getItem('authUser');
+        
+        // Initial setup
+        updateAuthUI();
+        if (authToken) fetchRemoteScripts();
+        else renderHistory();
+        
+        async function handleAuth() {
+            const u = document.getElementById('auth-username').value;
+            const p = document.getElementById('auth-password').value;
+            if (!u || !p) return alert("请输入账号和密码");
+            const btn = document.getElementById('auth-submit-btn');
+            btn.innerText = "加载中...";
+            try {
+                const res = await fetch("/api/auth", {
+                    method: "POST", headers:{"Content-Type":"application/json"},
+                    body: JSON.stringify({username: u, password: p})
+                });
+                const data = await res.json();
+                if (data.error) alert(data.error);
+                else {
+                    authToken = data.token; authUser = data.username;
+                    localStorage.setItem('authToken', authToken); localStorage.setItem('authUser', authUser);
+                    toggleAuthModal(); updateAuthUI(); await fetchRemoteScripts();
+                }
+            } catch(e) { alert("网络错误"); }
+            btn.innerText = "登录 / 注册";
+        }
+        
+        function updateAuthUI() {
+            const icon = document.querySelector('.user-icon');
+            if (authToken) {
+                icon.style.stroke = "var(--apple-blue)";
+                const h3 = document.querySelector('.auth-modal h3'), p = document.querySelector('.auth-modal p');
+                if(h3) h3.innerText = `欢迎! ${authUser}`;
+                if(p) p.innerText = "您已登录，正在云端保存您的剧本记忆";
+                document.getElementById('auth-username').style.display = 'none';
+                document.getElementById('auth-password').style.display = 'none';
+                const btn = document.getElementById('auth-submit-btn');
+                btn.innerText = "退出登录";
+                btn.onclick = () => {
+                    authToken = null; authUser = null;
+                    localStorage.removeItem('authToken'); localStorage.removeItem('authUser');
+                    historyData = []; localStorage.setItem('scriptHistory', '[]'); renderHistory();
+                    if(h3) h3.innerText = `账号登录`;
+                    if(p) p.innerText = "登录以保存和同步您的专属记忆";
+                    document.getElementById('auth-username').style.display = '';
+                    document.getElementById('auth-password').style.display = '';
+                    btn.innerText = "登录 / 注册"; btn.onclick = handleAuth;
+                    icon.style.stroke = "var(--text-main)";
+                    toggleAuthModal();
+                };
+            }
+        }
+        
+        async function fetchRemoteScripts() {
+            if (!authToken) return;
+            try {
+                const res = await fetch("/api/scripts", { headers: {"Authorization": `Bearer ${authToken}`} });
+                const list = await res.json();
+                if(!list.error) { historyData = list; localStorage.setItem('scriptHistory', JSON.stringify(historyData)); renderHistory(); }
+            } catch(e) {}
+        }
+        
+        async function syncRemoteScripts() {
+            if (!authToken) return;
+            try {
+                await fetch("/api/scripts/sync", {
+                    method: "POST", headers:{"Content-Type":"application/json", "Authorization": `Bearer ${authToken}`},
+                    body: JSON.stringify({scripts: historyData})
+                });
+            } catch(e) {}
+        }
 
         function toggleMode() {
             const b = document.body, i = document.getElementById('mode-icon');
@@ -1229,7 +1303,7 @@
             }, 200);
         }
 
-        function saveData() { localStorage.setItem('scriptHistory', JSON.stringify(historyData)); renderHistory(); }
+        function saveData() { localStorage.setItem('scriptHistory', JSON.stringify(historyData)); renderHistory(); syncRemoteScripts(); }
         function saveItem(item) { historyData.push({ id: Math.random().toString(36).substr(2, 9), timestamp: Date.now(), pinned: false, ...item }); saveData(); }
 
         function toggleMenu(e, id) { e.stopPropagation(); document.querySelectorAll('.item-action-menu').forEach(m => { if (m.id !== `menu-${id}`) m.classList.remove('show'); }); document.getElementById(`menu-${id}`).classList.toggle('show'); }
