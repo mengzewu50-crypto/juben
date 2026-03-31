@@ -189,7 +189,7 @@
             top: 50%;
             left: 50%;
             pointer-events: auto;
-            translate: var(--tx) var(--ty);
+            translate: calc(var(--tx) + var(--shift-x, 0px)) var(--ty);
             scale: var(--s, 1);
             transform: translateZ(0);
             backface-visibility: hidden;
@@ -360,14 +360,28 @@
         }
 
         body.is-island-top .island {
-            pointer-events: none;
-            transition: scale 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease !important;
+            pointer-events: auto !important;
+            cursor: pointer;
+            transition: scale 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease, box-shadow 0.4s ease !important;
             transition-property: scale, opacity, box-shadow, border-color !important;
         }
 
+        body.top-ready .island {
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+        }
+
+        body.top-ready .island:hover {
+            z-index: 100 !important;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15), inset 0 1px 1px rgba(255,255,255,0.7) !important;
+        }
+
+        body.dark.top-ready .island:hover {
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.1) !important;
+        }
+
         body.is-island-top .island-1 {
-            --tx: calc(-200% - 25px);
-            --ty: calc(-50vh + 35px);
+            --tx: -345px;
+            --ty: calc(-50vh + 80px);
             width: 160px;
             height: 46px;
             border-radius: 23px;
@@ -375,8 +389,8 @@
         }
 
         body.is-island-top .island-2 {
-            --tx: calc(-100% - 8px);
-            --ty: calc(-50vh + 35px);
+            --tx: -168px;
+            --ty: calc(-50vh + 80px);
             width: 160px;
             height: 46px;
             border-radius: 23px;
@@ -385,7 +399,7 @@
 
         body.is-island-top .island-3 {
             --tx: 8px;
-            --ty: calc(-50vh + 35px);
+            --ty: calc(-50vh + 80px);
             width: 160px;
             height: 46px;
             border-radius: 23px;
@@ -393,12 +407,40 @@
         }
 
         body.is-island-top .island-4 {
-            --tx: calc(100% + 25px);
-            --ty: calc(-50vh + 35px);
+            --tx: 185px;
+            --ty: calc(-50vh + 80px);
             width: 160px;
             height: 46px;
             border-radius: 23px;
             padding: 0 15px;
+        }
+
+        body.top-ready .island-1:hover { --shift-x: var(--push-neg-1, -10px); width: var(--hover-w-1, 240px); }
+        body.top-ready .island-2:hover { --shift-x: var(--push-neg-2, -10px); width: var(--hover-w-2, 240px); }
+        body.top-ready .island-3:hover { --shift-x: var(--push-neg-3, -10px); width: var(--hover-w-3, 240px); }
+        body.top-ready .island-4:hover { --shift-x: var(--push-neg-4, -10px); width: var(--hover-w-4, 240px); }
+
+        body.top-ready:has(.island-1:hover) .island-2,
+        body.top-ready:has(.island-1:hover) .island-3,
+        body.top-ready:has(.island-1:hover) .island-4 { --shift-x: var(--push-1, 10px); }
+
+        body.top-ready:has(.island-2:hover) .island-1 { --shift-x: var(--push-neg-2, -10px); }
+        body.top-ready:has(.island-2:hover) .island-3,
+        body.top-ready:has(.island-2:hover) .island-4 { --shift-x: var(--push-2, 10px); }
+
+        body.top-ready:has(.island-3:hover) .island-1,
+        body.top-ready:has(.island-3:hover) .island-2 { --shift-x: var(--push-neg-3, -10px); }
+        body.top-ready:has(.island-3:hover) .island-4 { --shift-x: var(--push-3, 10px); }
+
+        body.top-ready:has(.island-4:hover) .island-1,
+        body.top-ready:has(.island-4:hover) .island-2,
+        body.top-ready:has(.island-4:hover) .island-3 { --shift-x: var(--push-neg-4, -10px); }
+
+        body.top-ready .island-1:hover .pill-text,
+        body.top-ready .island-2:hover .pill-text,
+        body.top-ready .island-3:hover .pill-text,
+        body.top-ready .island-4:hover .pill-text {
+            max-width: 250px;
         }
 
         .normal-view {
@@ -406,6 +448,14 @@
             flex-direction: column;
             justify-content: center;
             height: 100%;
+            transform-origin: center center;
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+        }
+
+        .island.is-text-hiding .normal-view {
+            transform: scale(0.65);
+            opacity: 0;
+            transition: transform 0.25s cubic-bezier(0.36, -0.24, 0.26, 0.8), opacity 0.2s ease;
         }
 
         .pill-view {
@@ -428,13 +478,15 @@
 
         .pill-text {
             color: var(--text-main);
-            font-size: 14px;
-            font-weight: 500;
+            font-size: 13px;
+            font-weight: 400;
+            letter-spacing: 0.01em;
             font-family: var(--apple-font);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
             max-width: 100px;
+            transition: max-width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
         body.is-island-top .normal-view {
@@ -848,8 +900,10 @@
             padding: 12px 28px;
             border-radius: 18px;
             border: 1px solid rgba(0, 0, 0, 0.1);
-            font-size: 16px;
-            font-weight: 600;
+            font-size: 15px;
+            font-weight: 500;
+            font-family: var(--apple-font);
+            letter-spacing: 0.01em;
             cursor: pointer;
             transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
             transform: scale(1);
@@ -1212,6 +1266,80 @@
             cursor: pointer;
             fill: var(--text-placeholder);
         }
+
+        /* Mode Switcher */
+        .mode-switcher {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 14px;
+            padding: 4px;
+            z-index: 1000;
+        }
+
+        .mode-switcher .segment {
+            position: relative;
+            padding: 8px 18px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            color: var(--text-placeholder);
+            transition: color 0.3s var(--apple-bezier);
+            z-index: 2;
+        }
+
+        .mode-switcher .segment.active {
+            color: var(--text-main);
+        }
+
+        .mode-switcher .segment-indicator {
+            position: absolute;
+            top: 4px;
+            bottom: 4px;
+            left: 4px;
+            border-radius: 10px;
+            transition: transform 0.4s var(--apple-bezier), width 0.4s var(--apple-bezier);
+            z-index: 1;
+
+            /* iOS 26 Liquid Glass Style for the indicator */
+            background:
+                linear-gradient(
+                    155deg,
+                    rgba(255,255,255,0.48) 0%,
+                    rgba(255,255,255,0.05) 28%,
+                    rgba(255,255,255,0.00) 58%,
+                    rgba(210,220,255,0.05) 100%
+                ),
+                rgba(255,255,255,0.25);
+            backdrop-filter: blur(20px) saturate(180%) brightness(1.05);
+            -webkit-backdrop-filter: blur(20px) saturate(180%) brightness(1.05);
+            box-shadow:
+                0  2px  4px  rgba(0,0,0,0.04),
+                0  6px 12px  rgba(0,0,0,0.08),
+                0  0   0 1px rgba(255,255,255,0.35),
+                inset 0  1px  1px rgba(255,255,255,0.9),
+                inset 1px 0  1px rgba(255,255,255,0.5),
+                inset -1px 0 1px rgba(255,255,255,0.2),
+                inset 0 -1px  2px rgba(0,0,0,0.05);
+        }
+
+        body.dark .mode-switcher .segment-indicator {
+            background: rgba(36, 36, 52, 0.45);
+            box-shadow:
+                0  2px  6px  rgba(0,0,0,0.20),
+                0  8px 16px  rgba(0,0,0,0.15),
+                0  0   0 1px rgba(255,255,255,0.08),
+                inset 0  1px  1px rgba(255,255,255,0.12),
+                inset 1px 0 1px rgba(255,255,255,0.08),
+                inset -1px 0 1px rgba(255,255,255,0.03),
+                inset 0 -1px  2px rgba(0,0,0,0.35);
+        }
     </style>
 </head>
 
@@ -1220,6 +1348,14 @@
     <div class="bg-glow"></div>
     <div class="bg-glass-overlay"></div>
     <div class="history-overlay" id="history-overlay" onclick="toggleDrawer()"></div>
+
+    <!-- Mode Switcher -->
+    <div class="mode-switcher" id="mode-switcher">
+        <div class="segment active" onclick="switchMode(this, '脑洞爽文')">脑洞爽文</div>
+        <div class="segment" onclick="switchMode(this, '感官细节')">感官细节</div>
+        <div class="segment" onclick="switchMode(this, '真实模拟')">真实模拟</div>
+        <div class="segment-indicator" id="segment-indicator"></div>
+    </div>
 
     <button class="user-toggle" onclick="toggleAuthModal()" title="登录/注册"><svg viewBox="0 0 24 24">
             <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
@@ -1461,30 +1597,166 @@
             if (e.target.id === 'auth-modal-overlay') toggleAuthModal();
         });
 
+        let currentModeKey = '脑洞爽文';
+
+        const MODE_UI_CONFIG = {
+            '脑洞爽文': {
+                island1: { label: '时代背景', placeholder: '例如：古罗马' },
+                island2: { label: '开局/转场', placeholder: '例如：破土屋->豪商府邸' },
+                island3: { label: '底层身份', placeholder: '例如：饿肚子的流民' },
+                island4: { label: '降维外挂', placeholder: '例如：一台阿帕奇直升机' }
+            },
+            '感官细节': {
+                island1: { label: '时代背景', placeholder: '例如：古代' },
+                island2: { label: '核心舞台', placeholder: '例如：地主大院' },
+                island3: { label: '饥寒交迫', placeholder: '例如：三天没吃饭的跑堂' },
+                island4: { label: '极致渴望', placeholder: '例如：一碗红烧肉' }
+            },
+            '真实模拟': {
+                island1: { label: '时代背景', placeholder: '例如：明朝末年' },
+                island2: { label: '真实场景', placeholder: '例如：长安县衙' },
+                island3: { label: '底层身份', placeholder: '例如：被抓壮丁的铁匠' },
+                island4: { label: '生存考验', placeholder: '例如：办一张出城路引' }
+            }
+        };
+
+        const RANDOM_DICTS = {
+            '脑洞爽文': {
+                era: [
+                    "大秦统一六国时期", "美国西部大开发时代", "玛雅文明古典时期", "日本战国时代", 
+                    "古罗马角斗士时代", "中世纪欧洲黑死病时期", "维多利亚工业革命雾都", 
+                    "加勒比海盗黄金时代", "古埃及新王国时期", "大明王朝末年饥荒期"
+                ],
+                location: [
+                    "长城修筑工地的悬崖边", "德克萨斯荒野的小镇酒馆", "雨林深处的祭祀金字塔", 
+                    "京都城下町的破烂木屋", "罗马斗兽场最底层的铁笼", "被木板封死的鼠疫村庄", 
+                    "伦敦东区煤烟弥漫的工厂", "黑帆海盗船的底舱", "尼罗河畔的采石场", 
+                    "塞满了灾民的破败城隍庙"
+                ],
+                identity: [
+                    "被征召修长城的徭役", "欠下巨债的赏金猎人", "即将被献祭的玛雅孤儿", 
+                    "断了手指的落魄武士", "双眼近瞎的角斗士奴隶", "推着运尸车的鼠疫幸存者", 
+                    "肺部吸满煤烟的童工", "被流放荒岛的断腿水手", "底比斯神庙的杂役", 
+                    "卖身换米喂养老娘的灾民"
+                ],
+                reversal: [
+                    "一箱现代红烧牛肉面", "拥有阿帕奇直升机的控制权", "万兽亲和/极度吸猫体质", 
+                    "一张颠倒众生的绝世脸蛋", "一包现代高产杂交水稻种", "现代军用抗生素药箱", 
+                    "怎么也吃不完的极品咸菜缸", "一把无限弹药的现代格洛克", "现代初中物理手册", 
+                    "一台装满子弹的现代加特林"
+                ]
+            },
+            '感官细节': {
+                era: ["古代饥荒", "战乱年代", "冰川末世", "民国夜上海", "破败深巷", "荒原边缘"],
+                location: ["地主大院厨房外", "深夜面摊", "权贵晚宴的下水道", "寒风中的破庙", "富商的泔水桶旁", "大饥荒的村落"],
+                identity: ["三天没吃饭的跑堂", "冻僵的火柴女孩", "啃树皮的农夫", "饿晕的流浪汉", "闻香味的乞丐", "苦工"],
+                reversal: ["一碗红烧肉", "一碗热气腾腾的阳春面", "一块流油的烤肉", "热腾腾的白面馒头", "一口甘甜的泉水", "一块酥脆的炸鸡"]
+            },
+            '真实模拟': {
+                era: ["明朝末年", "中世纪欧洲", "二战时期", "战国时期", "法国大革命", "罗马帝国"],
+                location: ["长安县衙", "黑死病村庄", "泥泞战壕", "被围困的孤城", "绞刑架下方", "角斗士训练场"],
+                identity: ["被抓壮丁的铁匠", "染病的农夫", "瞎眼的士卒", "交不起税的佃农", "即将被处决的平民", "失去双亲的孤儿"],
+                reversal: ["办一张出城路引", "找到干净的水", "活过今晚", "偷走一块发霉的面包", "躲避黑死病", "熬过一场高烧"]
+            }
+        };
+
+        function switchMode(element, mode) {
+            if (currentModeKey === mode) return;
+            currentModeKey = mode;
+            // Update active styling
+            document.querySelectorAll('.mode-switcher .segment').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+            
+            // Move indicator
+            const indicator = document.getElementById('segment-indicator');
+            indicator.style.width = element.offsetWidth + 'px';
+            indicator.style.transform = `translateX(${element.offsetLeft - 4}px)`;
+
+            // Trigger bounce out text animations
+            const islands = document.querySelectorAll('.island');
+            islands.forEach(island => island.classList.add('is-text-hiding'));
+
+            setTimeout(() => {
+                // Update Labels and Placeholders after text shrinks and hides
+                const conf = MODE_UI_CONFIG[mode];
+                document.querySelector('.island-1 label').innerText = conf.island1.label;
+                const eraEl = document.getElementById('era'); eraEl.placeholder = conf.island1.placeholder; eraEl.value = '';
+
+                document.querySelector('.island-2 label').innerText = conf.island2.label;
+                const locEl = document.getElementById('location'); locEl.placeholder = conf.island2.placeholder; locEl.value = '';
+
+                document.querySelector('.island-3 label').innerText = conf.island3.label;
+                const idEl = document.getElementById('identity'); idEl.placeholder = conf.island3.placeholder; idEl.value = '';
+
+                document.querySelector('.island-4 label').innerText = conf.island4.label;
+                const revEl = document.getElementById('reversal'); revEl.placeholder = conf.island4.placeholder; revEl.value = '';
+
+                // Trigger bounce in text animations
+                islands.forEach(island => island.classList.remove('is-text-hiding'));
+            }, 200); // Wait 200ms to allow smooth disappearance before swapping
+        }
+
+        // Initialize indicator position
+        window.addEventListener('load', () => {
+            const firstSegment = document.querySelector('.mode-switcher .segment');
+            if (firstSegment) {
+                const indicator = document.getElementById('segment-indicator');
+                indicator.style.width = firstSegment.offsetWidth + 'px';
+                indicator.style.transform = `translateX(0px)`;
+            }
+        });
+
         async function startGenerate() {
             if (document.body.classList.contains('is-generating')) return;
 
-            const RANDOM_ERAS = ["修仙乱世", "赛博朋克", "星际帝国", "末日废土", "大唐盛世", "蒸汽朋克", "深海纪元", "上古神话", "赛博武侠", "克苏鲁世界"];
-            const RANDOM_LOCATIONS = ["地下黑市", "浮空要塞", "星际垃圾场", "皇家地牢", "废弃神庙", "第九疯人院", "巨物尸骸内部", "赛博贫民窟", "修仙外院", "深渊第一层"];
-            const RANDOM_IDENTITIES = ["扫地杂役", "基因残缺者", "流放皇族", "废土拾荒客", "无名仵作", "落魄散修", "最后神明", "瞎眼盲仆", "报废仿生人", "守夜人"];
-            const RANDOM_REVERSALS = ["随身吞噬系统", "左眼看穿生死", "附身亡灵禁卷", "异变治愈之血", "古神低语共生", "一键满级面板", "隐藏军火库", "斩断时间之剑", "终极BOSS转世", "无限时间回溯"];
-            
-            const randomDict = {
-                'era': RANDOM_ERAS,
-                'location': RANDOM_LOCATIONS,
-                'identity': RANDOM_IDENTITIES,
-                'reversal': RANDOM_REVERSALS
-            };
+            const PRESETS_BRAIN = [
+                { era: "大秦统一六国时期", loc: "长城修筑工地的悬崖边", id: "被征召修长城的苦命徭役", rev: "一台装载满子弹的现代加特林" },
+                { era: "古罗马帝国晚期", loc: "罗马斗兽场最底层的铁笼", id: "双眼近瞎的替死角斗士", rev: "一箱现代军用级别抗生素" },
+                { era: "美国西部大开发时代", loc: "德克萨斯荒野的小镇酒馆", id: "欠下黑帮巨债的落魄淘金客", rev: "一架满载武装的阿帕奇直升机" },
+                { era: "玛雅文明古典时期", loc: "雨林深处的祭祀金字塔", id: "即将被活人献祭的底层孤儿", rev: "一把无限弹药的现代格洛克手枪" }
+            ];
 
-            ['era', 'location', 'identity', 'reversal'].forEach(id => {
-                const el = document.getElementById(id);
+            const PRESETS_SENSES = [
+                { era: "大明王朝末年饥荒期", loc: "塞满了灾民的破败城隍庙", id: "饿到啃树皮的流民", rev: "一碗肥瘦相间、滋滋冒油的红烧肉" },
+                { era: "日本战国时代", loc: "京都城下町的破烂木屋", id: "三天没吃饭的落魄流浪武士", rev: "一碗热气腾腾、洒满葱花的浓郁肉汤面" },
+                { era: "古巴比伦王国", loc: "干旱沙漠的奴隶营地", id: "渴到嗓子冒烟的修塔奴隶", rev: "一口冰镇甘甜的清凉泉水" },
+                { era: "中世纪欧洲黑死病时期", loc: "阴暗潮湿的伦敦下水道", id: "常年营养不良的清道夫童工", rev: "一块刚出炉、散发着麦香的黄油软面包" }
+            ];
+
+            const PRESETS_REALITY = [
+                { era: "大秦统一六国时期", loc: "风雪交加的边关驿站", id: "丢失了公文的底层小吏", rev: "搞到一张能保命的通关验传" },
+                { era: "中世纪欧洲黑死病时期", loc: "被木板封死的鼠疫村庄", id: "刚埋葬了家人的底层农奴", rev: "在领主的鞭笞和瘟疫中活过今晚" },
+                { era: "古希腊斯巴达城邦", loc: "残酷的少年军事训练营", id: "被视为消耗品的希洛人侍从", rev: "在贵族少年的成人礼猎杀中活下来" }
+            ];
+
+            let activePresets = PRESETS_BRAIN;
+            if (currentModeKey === '感官细节') activePresets = PRESETS_SENSES;
+            else if (currentModeKey === '真实模拟') activePresets = PRESETS_REALITY;
+
+            const randomPreset = activePresets[Math.floor(Math.random() * activePresets.length)];
+
+            ['era', 'location', 'identity', 'reversal'].forEach((fieldId, idx) => {
+                const el = document.getElementById(fieldId);
                 let v = el.value.trim();
+                
                 if (!v) {
-                    v = randomDict[id][Math.floor(Math.random() * randomDict[id].length)];
+                    if (fieldId === 'location') v = randomPreset.loc;
+                    else if (fieldId === 'identity') v = randomPreset.id;
+                    else if (fieldId === 'reversal') v = randomPreset.rev;
+                    else v = randomPreset.era;
                 }
-                const textEl = document.getElementById(`pill-text-${id}`);
+                const textEl = document.getElementById(`pill-text-${fieldId}`);
                 textEl.innerText = v;
                 textEl.style.color = 'var(--text-main)';
+
+                let snugW = v.length * 15 + 50;
+                if (snugW < 160) snugW = 160;
+                if (snugW > 280) snugW = 280;
+                const shiftDist = (snugW - 160) / 2;
+                const i = idx + 1;
+                document.body.style.setProperty(`--hover-w-${i}`, snugW + 'px');
+                document.body.style.setProperty(`--push-${i}`, shiftDist + 'px');
+                document.body.style.setProperty(`--push-neg-${i}`, -shiftDist + 'px');
             });
 
             document.body.classList.add('is-hiding');
@@ -1510,9 +1782,17 @@
             await new Promise(r => setTimeout(r, 850));
             document.body.classList.add('is-island-top');
             document.body.classList.remove('is-hiding');
+            setTimeout(() => document.body.classList.add('top-ready'), 500);
 
             try {
-                const res = await fetch('/api/generate_script', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ era: document.getElementById('pill-text-era').innerText, location: document.getElementById('pill-text-location').innerText, identity: document.getElementById('pill-text-identity').innerText, reversal: document.getElementById('pill-text-reversal').innerText }), signal: abortController.signal });
+                const reqBody = {
+                    era: document.getElementById('pill-text-era').innerText, 
+                    location: document.getElementById('pill-text-location').innerText, 
+                    identity: document.getElementById('pill-text-identity').innerText, 
+                    reversal: document.getElementById('pill-text-reversal').innerText,
+                    mode: currentModeKey
+                };
+                const res = await fetch('/api/generate_script', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(reqBody), signal: abortController.signal });
                 const reader = res.body.getReader(), decoder = new TextDecoder();
                 content.innerText = "";
                 let buffer = "";
@@ -1524,14 +1804,16 @@
                     for (const line of lines) {
                         if (line.startsWith('data: ')) {
                             const dataStr = line.slice(6);
-                            if (dataStr === '[DONE]') { finishGen(); break; }
+                            if (dataStr === '[DONE]') { break; }
                             try {
                                 const parsed = JSON.parse(dataStr);
                                 if (parsed.content) { typingQueue += parsed.content; }
+                                else if (parsed.error) { typingQueue += `\n\n[生成错误: ${parsed.error}]`; }
                             } catch (e) { }
                         }
                     }
                 }
+                finishGen();
             } catch (e) { if (e.name === 'AbortError') { typingQueue += "\n\n[ 已停止 ]"; } finishGen(); }
         }
 
@@ -1567,6 +1849,7 @@
                      location: document.getElementById('pill-text-location').innerText, 
                      identity: document.getElementById('pill-text-identity').innerText, 
                      reversal: document.getElementById('pill-text-reversal').innerText,
+                     mode: currentModeKey,
                      existing_content: fullScript
                 };
                 
@@ -1586,14 +1869,16 @@
                     for (const line of lines) {
                         if (line.startsWith('data: ')) {
                             const dataStr = line.slice(6);
-                            if (dataStr === '[DONE]') { finishGen(); break; }
+                            if (dataStr === '[DONE]') { break; }
                             try {
                                 const parsed = JSON.parse(dataStr);
                                 if (parsed.content) { typingQueue += parsed.content; }
+                                else if (parsed.error) { typingQueue += `\n\n[续写错误: ${parsed.error}]`; }
                             } catch (e) { }
                         }
                     }
                 }
+                finishGen();
             } catch (e) { if (e.name === 'AbortError') { typingQueue += "\n\n[ 已停止 ]"; } finishGen(); }
         }
 
@@ -1623,7 +1908,7 @@
                     const tLoc = document.getElementById('pill-text-location').innerText;
                     const tIden = document.getElementById('pill-text-identity').innerText;
                     const tRev = document.getElementById('pill-text-reversal').innerText;
-                    const tags = `${tEra}·${tLoc}·${tIden}·${tRev}`;
+                    const tags = `${currentModeKey}：${tEra}·${tLoc}·${tIden}·${tRev}`;
 
                     const existingIdx = historyData.findIndex(h => h.id === currentScriptId);
                     if (existingIdx > -1) { historyData[existingIdx].content = fullScript; }
@@ -1677,27 +1962,29 @@
             // Start container shrinking concurrently with button fade out
             document.body.classList.add('is-hiding');
             document.body.classList.remove('is-generating');
-            document.body.classList.remove('is-island-top');
             
             // Allow opacity to completely fade (250ms) before clearing innerHTML
             setTimeout(() => { 
                 document.getElementById('script-content').innerHTML = '';
             }, 250);
 
-            // Show pills after container shrink completes (e.g., 600ms)
+            // Show islands after container shrink completes (e.g., 600ms)
             setTimeout(() => {
-                document.body.classList.remove('is-hiding');
+                document.body.classList.remove('is-island-top');
+                document.body.classList.remove('top-ready');
                 wrapper.style.transition = ''; 
                 wrapper.style.opacity = '';
                 
-                const pills = document.querySelectorAll('.pill-input');
-                let startDelay = 50;
-                pills.forEach((pill, i) => {
-                    setTimeout(() => {
-                        pill.classList.remove('pill-hidden');
-                        pill.style.visibility = 'visible';
-                    }, startDelay + (i * 60));
-                });
+                // Add emerging class for bounce-in transition, then remove hiding
+                document.body.classList.add('is-emerging-center');
+                // Force reflow before removing is-hiding so the transition fires
+                void document.body.offsetHeight;
+                document.body.classList.remove('is-hiding');
+
+                // Clean up emerging class after animation completes
+                setTimeout(() => {
+                    document.body.classList.remove('is-emerging-center');
+                }, 600);
             }, 600);
         }
 
