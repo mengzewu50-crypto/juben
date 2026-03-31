@@ -477,14 +477,21 @@
             z-index: 50;
             width: 140px;
             height: 140px;
+            max-width: 140px;
+            max-height: 140px;
+            min-width: 140px;
+            min-height: 140px;
             transition: all 0.75s var(--return-bezier);
         }
 
         body.is-generating .siri-sphere-center {
             top: calc(50% + 30px);
             width: 88vw;
-            max-width: 1100px;
             height: 75vh;
+            max-width: 1100px;
+            max-height: 90vh;
+            min-width: 320px;
+            min-height: 480px;
             transition: all 0.85s var(--apple-bezier);
         }
 
@@ -1296,11 +1303,14 @@
         function goBack(e) {
             e.stopPropagation();
             const wrapper = document.getElementById('script-wrapper');
-            wrapper.style.transition = 'opacity 0.2s ease'; wrapper.style.opacity = '0';
-            setTimeout(() => {
-                document.body.classList.remove('is-generating');
-                setTimeout(() => { document.getElementById('script-content').innerText = ""; wrapper.style.transition = ''; wrapper.style.opacity = ''; }, 800);
-            }, 200);
+            wrapper.style.transition = 'opacity 0.3s ease'; 
+            wrapper.style.opacity = '0';
+            document.body.classList.remove('is-generating');
+            setTimeout(() => { 
+                document.getElementById('script-content').innerText = ""; 
+                wrapper.style.transition = ''; 
+                wrapper.style.opacity = ''; 
+            }, 750);
         }
 
         function saveData() { localStorage.setItem('scriptHistory', JSON.stringify(historyData)); renderHistory(); syncRemoteScripts(); }
