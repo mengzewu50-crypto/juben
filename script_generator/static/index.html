@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI剧本生成平台</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         :root {
             --apple-font: "SF Pro Display", "SF Pro Text", -apple-system, sans-serif;
@@ -509,25 +510,55 @@
             transition: all 0.85s var(--apple-bezier);
         }
 
-        /* 展开后变为羊皮纸/黑卡纸 */
+        /* 展开后变为液态磨砂玻璃 */
         body.is-generating .siri-sphere {
             border-radius: 40px;
             cursor: default;
-            background-color: var(--paper-bg);
-            background-image: var(--paper-grain);
-            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.15);
-            border-top:    1px solid rgba(0,0,0,0.05);
-            border-left:   1px solid rgba(0,0,0,0.05);
-            border-right:  1px solid rgba(0,0,0,0.05);
-            border-bottom: 1px solid rgba(0,0,0,0.05);
-            backdrop-filter: none;
-            -webkit-backdrop-filter: none;
+            
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(255,255,255,0.62) 0%,
+                    rgba(255,255,255,0.10) 38%,
+                    rgba(200,215,255,0.06) 68%,
+                    rgba(255,255,255,0.20) 100%
+                ),
+                rgba(255,255,255,0.18);
+            backdrop-filter: blur(34px) saturate(220%) brightness(1.05);
+            -webkit-backdrop-filter: blur(34px) saturate(220%) brightness(1.05);
+            border-top:    1.5px solid rgba(255,255,255,0.7);
+            border-left:   1px   solid rgba(255,255,255,0.4);
+            border-right:  1px   solid rgba(255,255,255,0.15);
+            border-bottom: 1px   solid rgba(255,255,255,0.1);
+            
+            box-shadow:
+                0 16px 40px rgba(0,0,0,0.08),
+                0 0 0 1.5px rgba(255,255,255,0.2),
+                inset 0 2px 4px rgba(255,255,255,0.8);
+            
             transition: width 0.85s var(--apple-bezier),
                         height 0.85s var(--apple-bezier),
                         border-radius 0.85s var(--apple-bezier),
-                        background-color 0.85s var(--apple-bezier),
+                        background 0.85s var(--apple-bezier),
                         box-shadow 0.85s var(--apple-bezier),
                         border-color 0.85s var(--apple-bezier);
+        }
+
+        body.dark.is-generating .siri-sphere {
+            background: rgba(36, 36, 52, 0.45);
+            backdrop-filter: blur(44px) saturate(180%) brightness(0.92);
+            -webkit-backdrop-filter: blur(44px) saturate(180%) brightness(0.92);
+            border-top-color:   rgba(255,255,255,0.08);
+            border-left-color:  rgba(255,255,255,0.05);
+            border-right-color: rgba(255,255,255,0.02);
+            border-bottom-color:rgba(255,255,255,0.02);
+            box-shadow:
+                0  6px 16px  rgba(0,0,0,0.30),
+                0 20px 50px  rgba(0,0,0,0.28),
+                0 36px 80px  rgba(0,0,0,0.18),
+                0  0   0 1px rgba(255,255,255,0.05),
+                inset 0  1px  2px rgba(255,255,255,0.08),
+                inset 0 -2px  4px rgba(0,0,0,0.45);
         }
 
         body.is-generating .siri-sphere::before,
@@ -734,12 +765,50 @@
             overflow-y: auto;
         }
 
+        .script-scroll-area::-webkit-scrollbar {
+            width: 8px;
+        }
+        .script-scroll-area::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .script-scroll-area::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 4px;
+        }
+        body.dark .script-scroll-area::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+        }
+        .script-scroll-area::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 0, 0, 0.25);
+        }
+        body.dark .script-scroll-area::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
         .script-text {
             line-height: 2.2;
-            font-size: 21px;
-            white-space: pre-wrap;
+            font-size: 20px;
             color: var(--text-main);
             padding-bottom: 20px;
+        }
+
+        /* Markdown 样式优化 */
+        .script-text h1, .script-text h2, .script-text h3 {
+            font-weight: 600;
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+            color: var(--text-main);
+        }
+        .script-text h1 { font-size: 28px; }
+        .script-text h2 { font-size: 24px; }
+        .script-text h3 { font-size: 20px; }
+        .script-text strong {
+            font-weight: 600;
+            color: var(--text-main);
+        }
+        .script-text p {
+            margin-bottom: 1em;
+            white-space: pre-wrap;
         }
 
         .action-bar {
@@ -1346,7 +1415,7 @@
 
             wrapper.style.transition = 'opacity 0.6s ease'; wrapper.style.opacity = '1';
             cBtn.style.display = 'block'; rBtn.style.display = 'none'; document.getElementById('continue-btn').style.display = 'none';
-            content.innerText = "时空链接中..."; fullScript = ""; currentScriptId = Math.random().toString(36).substr(2, 9); abortController = new AbortController();
+            content.innerHTML = "时空链接中..."; fullScript = ""; currentScriptId = Math.random().toString(36).substr(2, 9); abortController = new AbortController();
 
             // Wait for sphere to fully expand before fetching and showing islands at the top
             await new Promise(r => setTimeout(r, 850));
@@ -1369,12 +1438,12 @@
                             if (dataStr === '[DONE]') { finishGen(); break; }
                             try {
                                 const parsed = JSON.parse(dataStr);
-                                if (parsed.content) { fullScript += parsed.content; content.innerText = fullScript; scroll.scrollTop = scroll.scrollHeight; }
+                                if (parsed.content) { fullScript += parsed.content; content.innerHTML = marked.parse(fullScript); scroll.scrollTop = scroll.scrollHeight; }
                             } catch (e) { }
                         }
                     }
                 }
-            } catch (e) { if (e.name === 'AbortError') content.innerText += "\n\n[ 已停止 ]"; finishGen(); }
+            } catch (e) { if (e.name === 'AbortError') { fullScript += "\n\n[ 已停止 ]"; content.innerHTML = marked.parse(fullScript); } finishGen(); }
         }
 
         function cancelGen(e) { e.stopPropagation(); if (abortController) abortController.abort(); }
@@ -1393,11 +1462,11 @@
             
             if (!fullScript.endsWith('\n') && !fullScript.endsWith(']')) {
                 fullScript += '\n\n';
-                content.innerText = fullScript;
+                content.innerHTML = marked.parse(fullScript);
             }
             if (fullScript.endsWith('[ 已停止 ]')) {
                 fullScript = fullScript.replace('\n\n[ 已停止 ]', '\n\n');
-                content.innerText = fullScript;
+                content.innerHTML = marked.parse(fullScript);
             }
             
             try {
@@ -1428,12 +1497,12 @@
                             if (dataStr === '[DONE]') { finishGen(); break; }
                             try {
                                 const parsed = JSON.parse(dataStr);
-                                if (parsed.content) { fullScript += parsed.content; content.innerText = fullScript; scroll.scrollTop = scroll.scrollHeight; }
+                                if (parsed.content) { fullScript += parsed.content; content.innerHTML = marked.parse(fullScript); scroll.scrollTop = scroll.scrollHeight; }
                             } catch (e) { }
                         }
                     }
                 }
-            } catch (e) { if (e.name === 'AbortError') content.innerText += "\n\n[ 已停止 ]"; finishGen(); }
+            } catch (e) { if (e.name === 'AbortError') { fullScript += "\n\n[ 已停止 ]"; content.innerHTML = marked.parse(fullScript); } finishGen(); }
         }
 
         function finishGen() { 
@@ -1469,7 +1538,7 @@
             
             setTimeout(() => { 
                 document.body.classList.remove('is-island-top');
-                document.body.classList.remove('is-hiding');
+                document.getElementById('script-content').innerHTML = '';  document.body.classList.remove('is-hiding');
                 document.body.classList.add('is-emerging-center');
                 
                 document.getElementById('script-content').innerText = ""; 
@@ -1525,7 +1594,9 @@
                     const wrapper = document.getElementById('script-wrapper'); 
                     wrapper.style.transition = 'opacity 0.6s ease'; 
                     wrapper.style.opacity = '1'; 
-                    document.getElementById('script-content').innerText = fullScript; 
+                    const content = document.getElementById('script-content');
+                    content.innerHTML = '';
+                    
                     document.getElementById('cancel-btn').style.display = 'none'; 
                     document.getElementById('return-btn').style.display = 'block'; 
                     document.getElementById('continue-btn').style.display = 'block'; 
@@ -1533,6 +1604,7 @@
                     await new Promise(r => setTimeout(r, 850));
                     document.body.classList.add('is-island-top');
                     document.body.classList.remove('is-hiding');
+                    content.innerHTML = marked.parse(fullScript);
                 };
                 list.appendChild(div);
             });
