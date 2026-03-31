@@ -120,6 +120,7 @@ async def generate_script(req: ScriptRequest):
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 @app.get("/")
+@app.head("/")
 async def read_index():
     return FileResponse("static/index.html")
 
