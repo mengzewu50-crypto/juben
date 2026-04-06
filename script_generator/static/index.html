@@ -487,6 +487,11 @@
             text-overflow: ellipsis;
             max-width: 100px;
             transition: max-width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            transform: translateZ(0);
+            backface-visibility: hidden;
+            will-change: max-width;
         }
 
         body.is-island-top .normal-view {
@@ -837,7 +842,8 @@
 
         .script-scroll-area {
             flex: 1;
-            padding: 40px 50px 0;
+            padding: 0 35px;
+            margin: 60px 15px 0 15px; /* Adds top & side margin to push scrollbar away from curved corner and close button */
             overflow-y: auto;
         }
 
@@ -1709,24 +1715,61 @@
         async function startGenerate() {
             if (document.body.classList.contains('is-generating')) return;
 
-            const PRESETS_BRAIN = [
-                { era: "大秦统一六国时期", loc: "长城修筑工地的悬崖边", id: "被征召修长城的苦命徭役", rev: "一台装载满子弹的现代加特林" },
-                { era: "古罗马帝国晚期", loc: "罗马斗兽场最底层的铁笼", id: "双眼近瞎的替死角斗士", rev: "一箱现代军用级别抗生素" },
-                { era: "美国西部大开发时代", loc: "德克萨斯荒野的小镇酒馆", id: "欠下黑帮巨债的落魄淘金客", rev: "一架满载武装的阿帕奇直升机" },
-                { era: "玛雅文明古典时期", loc: "雨林深处的祭祀金字塔", id: "即将被活人献祭的底层孤儿", rev: "一把无限弹药的现代格洛克手枪" }
-            ];
-
-            const PRESETS_SENSES = [
-                { era: "大明王朝末年饥荒期", loc: "塞满了灾民的破败城隍庙", id: "饿到啃树皮的流民", rev: "一碗肥瘦相间、滋滋冒油的红烧肉" },
-                { era: "日本战国时代", loc: "京都城下町的破烂木屋", id: "三天没吃饭的落魄流浪武士", rev: "一碗热气腾腾、洒满葱花的浓郁肉汤面" },
-                { era: "古巴比伦王国", loc: "干旱沙漠的奴隶营地", id: "渴到嗓子冒烟的修塔奴隶", rev: "一口冰镇甘甜的清凉泉水" },
-                { era: "中世纪欧洲黑死病时期", loc: "阴暗潮湿的伦敦下水道", id: "常年营养不良的清道夫童工", rev: "一块刚出炉、散发着麦香的黄油软面包" }
-            ];
-
+            // 真实模拟预设 (15个)
             const PRESETS_REALITY = [
-                { era: "大秦统一六国时期", loc: "风雪交加的边关驿站", id: "丢失了公文的底层小吏", rev: "搞到一张能保命的通关验传" },
-                { era: "中世纪欧洲黑死病时期", loc: "被木板封死的鼠疫村庄", id: "刚埋葬了家人的底层农奴", rev: "在领主的鞭笞和瘟疫中活过今晚" },
-                { era: "古希腊斯巴达城邦", loc: "残酷的少年军事训练营", id: "被视为消耗品的希洛人侍从", rev: "在贵族少年的成人礼猎杀中活下来" }
+                {era: '中世纪黑死病蔓延的欧洲', location: '封死城门的疫区街道', identity: '负责运送尸体的清道夫', reversal: '搞到一张未被感染的健康证明书出城'},
+                {era: '古埃及胡夫金字塔修筑期', location: '烈日暴晒的采石场', identity: '寿命不到三十岁的拉石奴隶', reversal: '在监工的皮鞭下偷藏一罐能救命的清水'},
+                {era: '大明万历大饥荒时期', location: '树皮都被啃光的灾区官道', identity: '满身生疮的流民', reversal: '用半条命换一张能领到施粥的破木牌'},
+                {era: '19世纪维多利亚时期的伦敦', location: '毒气弥漫的地下煤矿', identity: '每天弯腰工作14小时的童工', reversal: '躲过矿监的搜身把一块煤炭带回家生火'},
+                {era: '古罗马帝国残暴统治期', location: '卡普亚斗兽场的底层水牢', identity: '负责清理猛兽粪便的贱奴', reversal: '攒够三枚铜币贿赂看守换取换草席的机会'},
+                {era: '印加帝国波托西银矿', location: '缺氧窒息的狭窄矿道深处', identity: '寿命不到一年的原住民苦工', reversal: '私藏一片能缓解高反的古柯叶不被监工发现'},
+                {era: '沙俄农奴制时期的西伯利亚', location: '零下四十度的伐木场', identity: '双脚生疮的流放农奴', reversal: '从死人身上偷拔一双带补丁的破毡靴'},
+                {era: '唐朝安史之乱的睢阳围城', location: '连老鼠都被吃光的死寂街道', identity: '饿得发疯的守城小卒', reversal: '在死人堆里挖出半截没腐烂的草根'},
+                {era: '美国19世纪南方的棉花种植园', location: '烈日暴晒的无边棉花地', identity: '背上布满鞭痕的黑奴', reversal: '把一口干净的井水偷偷留给中暑的女儿'},
+                {era: '古代斯巴达军事训练营', location: '长满毒刺的荒山野岭', identity: '作为狩猎活靶子的希洛人贱民', reversal: '找到一块锋利的燧石割断同伴的麻绳'},
+                {era: '法兰西第一帝国远征俄国', location: '白雪皑皑的溃败退兵路上', identity: '马都被吃光的底层步兵', reversal: '在冻死的军官身上搜出一根还能划着的火柴'},
+                {era: '日本江户时代长屋贫民窟', location: '臭气熏天的公共厕所旁', identity: '靠倒夜香维持生计的贱民', reversal: '在粪池里捡到一枚掉落的永乐通宝铜钱'},
+                {era: '19世纪芝加哥屠宰场', location: '满地腐肉和血水的剥皮车间', identity: '没有劳动保险的移民短工', reversal: '在手指被切断前向监工讨要一卷干净的绷带'},
+                {era: '古代汉代西域丝绸之路', location: '风沙埋人的黑戈壁深处', identity: '走丢了驼队的底层牵驼奴', reversal: '在枯萎的胡杨树根下挖出一口带泥的浊水'},
+                {era: '北欧海盗时代的极寒渔村', location: '巨浪滔天的独木舟底仓', identity: '负责划桨划到吐血的奴隶', reversal: '在风暴来临前偷藏一块能防冻疮的鲸鱼油脂'}
+            ];
+
+            // 脑洞爽文预设 (15个)
+            const PRESETS_BRAIN = [
+                {era: '中世纪异端审判庭', location: '堆满干柴的火刑柱下', identity: '被判定为女巫的算数天才', reversal: '一台能立刻吐出照片的拍立得相机'},
+                {era: '古罗马帝国角斗场', location: '猛兽出笼的沙地', identity: '连木棍都没有发到的炮灰奴隶', reversal: '一根几万伏特的高压防身电击棍'},
+                {era: '阿兹特克帝国活人献祭现场', location: '金字塔顶端的烈火神坛', identity: '即将被挖出心脏的祭品', reversal: '一罐四公斤装的大红色干粉灭火器'},
+                {era: '维京海盗劫掠时期', location: '被包围的孤岛修道院', identity: '绝望等死的抄写修士', reversal: '一台手摇式防空警报器'},
+                {era: '大清帝国闭关锁国时期', location: '戒备森严的紫禁城大殿', identity: '冲撞了皇帝銮驾的死囚', reversal: '一个九块九包邮的强光爆闪手电筒'},
+                {era: '加勒比海盗黄金时代', location: '腥臭的海盗船底舱', identity: '被逼喝下毒药的东方苦力', reversal: '一大包草莓味的跳跳糖'},
+                {era: '中世纪十字军东征战场', location: '耶路撒冷城墙下', identity: '被当成肉盾的底层炮灰', reversal: '一个外放重金属摇滚的蓝牙音箱'},
+                {era: '原始部落石器时代', location: '活剥俘虏的祭坛', identity: '即将被剥皮的外族俘虏', reversal: '一瓶杀虫喷雾加打火机组成的“喷火器”'},
+                {era: '大明王朝东厂诏狱', location: '阴冷水牢', identity: '即将被严刑拷打的落魄书生', reversal: '一支记录了厂公受贿证据的现代录音笔'},
+                {era: '古巴比伦王国的暴君大殿', location: '黄金与鲜血的王座前', identity: '进贡失败即将被处死的商人', reversal: '一瓶摇晃过后疯狂喷发泡沫的冰镇可口可乐'},
+                {era: '日本战国川中岛合战', location: '浓雾弥漫的骑兵冲锋阵前', identity: '手拿竹竿的炮灰足轻', reversal: '一支大功率的绿光镭射笔（锁定大将眉心）'},
+                {era: '18世纪美洲印第安部落', location: '白人殖民者的包围圈中', identity: '被视为野蛮人的部落斥候', reversal: '一台带扩音器的太阳能航拍无人机'},
+                {era: '法兰西拿破仑时期', location: '瘟疫横行的战地医院', identity: '负责搬运肢体的杂役', reversal: '一盒针对性极强的现代阿莫西林抗生素'},
+                {era: '古代印度种姓制度下的贱民区', location: '臭水横流的恒河边', identity: '被高种姓凌辱的掏粪工', reversal: '一个会自动报警并释放强光高分贝噪音的现代防狼器'},
+                {era: '古希腊斯巴达城邦', location: '丢弃弃婴的悬崖边', identity: '负责收尸的希洛人奴隶', reversal: '一副带红外夜视功能的战术护目镜'}
+            ];
+
+            // 感官细节预设 (15个)
+            const PRESETS_SENSES = [
+                {era: '法国大革命前夕的凛冬', location: '凡尔赛宫冰冷的排烟管道', identity: '饿了三天三夜的扫烟囱童工', reversal: '一整只滴着黄油和迷迭香的贵族烤鸡'},
+                {era: '一战索姆河战役的泥泞战壕', location: '零下二十度的死人堆', identity: '冻得脚趾坏死的列兵', reversal: '半颗刚从灰烬里刨出来的滚烫烤土豆'},
+                {era: '中世纪英国《森林法》时期', location: '领主私家林地', identity: '吃了一整个月树皮的农奴', reversal: '一口领主餐桌上撒了昂贵胡椒的滴油烤鹿肉'},
+                {era: '日本战国连年战乱时期', location: '大名天守阁外围', identity: '饿得胃酸吐干的流浪孤儿', reversal: '一块大名没吃完的顶级金枪鱼大腹刺身'},
+                {era: '19世纪伦敦雾都', location: '贫民窟下水道口', identity: '满身煤灰的火柴厂女工', reversal: '一个富人丢弃的还在流着滚烫肉汁的碎肉派'},
+                {era: '古巴比伦王国极度干旱期', location: '修筑空中花园的脚手架', identity: '嘴唇干裂流血的苦力', reversal: '半个祭司供奉神明的汁水四溢的冰镇石榴'},
+                {era: '苏联古拉格劳改营', location: '西伯利亚采煤坑', identity: '患上严重坏血病濒死的囚犯', reversal: '一颗从典狱长桌上偷来的酸甜夏橙'},
+                {era: '秦朝修筑长城的苦寒边境', location: '狂风夹杂冰雹的烽火台下', identity: '手指冻掉两根的刑徒', reversal: '一碗端给监军的漂满厚厚油脂的滚烫羊肉汤'},
+                {era: '泰坦尼克号沉没的冰冷大西洋', location: '漆黑绝望的三等舱下层', identity: '被冰水泡到失去知觉的偷渡客', reversal: '一个装在防水锡盒里的极品黄油可颂'},
+                {era: '大清后宫等级森严的御膳房外', location: '馊水桶旁的阴暗角落', identity: '三天没吃饭的底层粗使丫鬟', reversal: '半碗贵妃吃剩下、沁人心脾的冰糖燕窝'},
+                {era: '二战列宁格勒围城战', location: '断水断电的废墟公寓', identity: '靠喝煮皮带汤活命的工厂学徒', reversal: '一勺从德国军用罐头里抠出来的凝固猪油'},
+                {era: '古罗马帝国庞贝城爆发前夕', location: '富商举办豪宴的厨房残羹堆', identity: '专门洗盘子的哑巴奴隶', reversal: '一盘糊满了珍稀蜂蜜和无花果酱的烤睡鼠'},
+                {era: '北宋汴京城的除夕深夜', location: '繁华酒楼外的雪地里', identity: '缩在草席下的卖花孤儿', reversal: '一碗酒客喝剩下、带着浓郁浓厚肉香的羊肉泡馍'},
+                {era: '1920年代上海滩旧弄堂', location: '满地煤灰的黄包车夫聚集地', identity: '饿到胃抽搐的拉车工', reversal: '一笼刚出锅、咬一口满嘴鲜烫肉汁的蟹粉小笼包'},
+                {era: '古代波斯帝国的戈壁商队', location: '极度缺水的仙人掌丛边缘', identity: '嘴唇裂开见骨的赶驼人', reversal: '一颗波斯亲王丢弃的、口感绵软如蜜的椰枣'}
             ];
 
             let activePresets = PRESETS_BRAIN;
@@ -1740,9 +1783,9 @@
                 let v = el.value.trim();
                 
                 if (!v) {
-                    if (fieldId === 'location') v = randomPreset.loc;
-                    else if (fieldId === 'identity') v = randomPreset.id;
-                    else if (fieldId === 'reversal') v = randomPreset.rev;
+                    if (fieldId === 'location') v = randomPreset.location || randomPreset.loc;
+                    else if (fieldId === 'identity') v = randomPreset.identity || randomPreset.id;
+                    else if (fieldId === 'reversal') v = randomPreset.reversal || randomPreset.rev;
                     else v = randomPreset.era;
                 }
                 const textEl = document.getElementById(`pill-text-${fieldId}`);
@@ -1785,12 +1828,13 @@
             setTimeout(() => document.body.classList.add('top-ready'), 500);
 
             try {
+                const activeMode = document.querySelector('.mode-switcher .segment.active').innerText.trim();
                 const reqBody = {
                     era: document.getElementById('pill-text-era').innerText, 
                     location: document.getElementById('pill-text-location').innerText, 
                     identity: document.getElementById('pill-text-identity').innerText, 
                     reversal: document.getElementById('pill-text-reversal').innerText,
-                    mode: currentModeKey
+                    mode: activeMode
                 };
                 const res = await fetch('/api/generate_script', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(reqBody), signal: abortController.signal });
                 const reader = res.body.getReader(), decoder = new TextDecoder();
@@ -1844,12 +1888,13 @@
             }
             
             try {
+                const activeMode = document.querySelector('.mode-switcher .segment.active').innerText.trim();
                 const reqBody = {
                      era: document.getElementById('pill-text-era').innerText, 
                      location: document.getElementById('pill-text-location').innerText, 
                      identity: document.getElementById('pill-text-identity').innerText, 
                      reversal: document.getElementById('pill-text-reversal').innerText,
-                     mode: currentModeKey,
+                     mode: activeMode,
                      existing_content: fullScript
                 };
                 
@@ -2022,6 +2067,15 @@
                         const v = tagParts[idx] || '';
                         document.getElementById(`pill-text-${id}`).innerText = v;
                         document.getElementById(`pill-text-${id}`).style.color = 'var(--text-main)';
+
+                        let snugW = v.length * 15 + 50;
+                        if (snugW < 160) snugW = 160;
+                        if (snugW > 280) snugW = 280;
+                        const shiftDist = (snugW - 160) / 2;
+                        const i = idx + 1;
+                        document.body.style.setProperty(`--hover-w-${i}`, snugW + 'px');
+                        document.body.style.setProperty(`--push-${i}`, shiftDist + 'px');
+                        document.body.style.setProperty(`--push-neg-${i}`, -shiftDist + 'px');
                     });
 
                     document.body.classList.add('is-hiding');
@@ -2050,6 +2104,7 @@
                     await new Promise(r => setTimeout(r, 850));
                     document.body.classList.add('is-island-top');
                     document.body.classList.remove('is-hiding');
+                    setTimeout(() => document.body.classList.add('top-ready'), 500);
                     content.innerHTML = marked.parse(fullScript);
                 };
                 list.appendChild(div);
