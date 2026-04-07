@@ -1778,21 +1778,31 @@
 
             const randomPreset = activePresets[Math.floor(Math.random() * activePresets.length)];
 
+            let allEmpty = true;
+            ['era', 'location', 'identity', 'reversal'].forEach((fieldId) => {
+                if (document.getElementById(fieldId).value.trim() !== '') {
+                    allEmpty = false;
+                }
+            });
+
             ['era', 'location', 'identity', 'reversal'].forEach((fieldId, idx) => {
                 const el = document.getElementById(fieldId);
                 let v = el.value.trim();
                 
-                if (!v) {
+                // 只有在全部字段都为空的时候，才使用一整套随机预设去填充
+                if (!v && allEmpty) {
                     if (fieldId === 'location') v = randomPreset.location || randomPreset.loc;
                     else if (fieldId === 'identity') v = randomPreset.identity || randomPreset.id;
                     else if (fieldId === 'reversal') v = randomPreset.reversal || randomPreset.rev;
                     else v = randomPreset.era;
                 }
                 const textEl = document.getElementById(`pill-text-${fieldId}`);
-                textEl.innerText = v;
+                // 如果局部为空，为了视觉美观，让胶囊显示空或者默认文本也可以。
+                // 实际传给后端的v如果是空字符串，就是空字符串。
+                textEl.innerText = v || "AI 自动推演";
                 textEl.style.color = 'var(--text-main)';
 
-                let snugW = v.length * 15 + 50;
+                let snugW = (v || "AI 自动推演").length * 15 + 50;
                 if (snugW < 160) snugW = 160;
                 if (snugW > 280) snugW = 280;
                 const shiftDist = (snugW - 160) / 2;
@@ -1829,11 +1839,23 @@
 
             try {
                 const activeMode = document.querySelector('.mode-switcher .segment.active').innerText.trim();
+                let finalEra = document.getElementById('era').value.trim();
+                let finalLocation = document.getElementById('location').value.trim();
+                let finalIdentity = document.getElementById('identity').value.trim();
+                let finalReversal = document.getElementById('reversal').value.trim();
+
+                if (!finalEra && !finalLocation && !finalIdentity && !finalReversal) {
+                    finalEra = document.getElementById('pill-text-era').innerText;
+                    finalLocation = document.getElementById('pill-text-location').innerText;
+                    finalIdentity = document.getElementById('pill-text-identity').innerText;
+                    finalReversal = document.getElementById('pill-text-reversal').innerText;
+                }
+
                 const reqBody = {
-                    era: document.getElementById('pill-text-era').innerText, 
-                    location: document.getElementById('pill-text-location').innerText, 
-                    identity: document.getElementById('pill-text-identity').innerText, 
-                    reversal: document.getElementById('pill-text-reversal').innerText,
+                    era: finalEra, 
+                    location: finalLocation, 
+                    identity: finalIdentity, 
+                    reversal: finalReversal,
                     mode: activeMode
                 };
                 const res = await fetch('/api/generate_script', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(reqBody), signal: abortController.signal });
